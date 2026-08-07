@@ -1,0 +1,67 @@
+﻿CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  phone_number VARCHAR(50) NOT NULL,
+  role VARCHAR(20) DEFAULT 'USER',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS wallets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  balance_fcfa DECIMAL(15,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS crypto_assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wallet_id UUID REFERENCES wallets(id) ON DELETE CASCADE,
+  crypto_type VARCHAR(10) NOT NULL,
+  amount DECIMAL(15,8) DEFAULT 0,
+  address VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(wallet_id, crypto_type)
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL,
+  status VARCHAR(20) DEFAULT 'PENDING',
+  amount DECIMAL(15,2) NOT NULL,
+  currency VARCHAR(10) NOT NULL,
+  crypto_type VARCHAR(10),
+  amount_crypto DECIMAL(15,8),
+  phone_number VARCHAR(50),
+  rate DECIMAL(15,2),
+  description TEXT,
+  validated_by UUID,
+  validated_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS crypto_prices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  crypto_type VARCHAR(10) UNIQUE NOT NULL,
+  price_fcfa DECIMAL(15,2) NOT NULL,
+  buy_rate DECIMAL(15,2) NOT NULL,
+  sell_rate DECIMAL(15,2) NOT NULL,
+  last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO crypto_prices (crypto_type, price_fcfa, buy_rate, sell_rate) VALUES
+('BTC', 35000000, 34000000, 36000000),
+('ETH', 2500000, 2400000, 2600000),
+('USDT', 600, 580, 620),
+('BNB', 350000, 340000, 360000),
+('XRP', 700, 680, 720),
+('SOL', 35000, 34000, 36000)
+ON CONFLICT (crypto_type) DO NOTHING;
