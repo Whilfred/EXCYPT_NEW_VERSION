@@ -52,7 +52,7 @@ async function handleLogin(e) {
             showToast('Connexion réussie !', 'success');
             localStorage.setItem('user', JSON.stringify(response.data.user));
             setTimeout(() => {
-                window.location.href = '/pages/dashboard.html';
+                window.location.href = './dashboard.html';
             }, 500);
         }
     } catch (error) {
@@ -110,7 +110,7 @@ async function handleRegister(e) {
             showToast('Inscription réussie !', 'success');
             localStorage.setItem('user', JSON.stringify(response.data.user));
             setTimeout(() => {
-                window.location.href = '/pages/dashboard.html';
+                window.location.href = './dashboard.html';
             }, 500);
         }
     } catch (error) {
@@ -227,7 +227,7 @@ function checkAuth() {
     const currentPage = window.location.pathname.split('/').pop();
     
     if (token && user && authPages.includes(currentPage)) {
-        window.location.href = '/pages/dashboard.html';
+        window.location.href = './dashboard.html';
     }
     
     if (currentPage === 'dashboard.html' && !token) {
