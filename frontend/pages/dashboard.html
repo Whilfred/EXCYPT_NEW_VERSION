@@ -1,0 +1,163 @@
+<!-- pages/dashboard.html - Correction des chemins -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - ExCrypt</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="../index.html" class="logo">
+                    <span class="logo-icon">₿</span>
+                    <span class="logo-text">ExCrypt</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">💰</span>
+                    <span>Portefeuille</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">🔄</span>
+                    <span>Transactions</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span>Historique</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span>Profil</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Paramètres</span>
+                </a>
+                <a href="#" class="nav-item logout" onclick="logout()">
+                    <span class="nav-icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="search-bar">
+                    <input type="text" placeholder="Rechercher..." />
+                </div>
+                <div class="topbar-actions">
+                    <button class="notif-btn">
+                        <span>🔔</span>
+                        <span class="notif-badge">3</span>
+                    </button>
+                    <div class="user-profile">
+                        <span class="user-avatar">JD</span>
+                        <div class="user-info">
+                            <span class="user-name" id="userName">John Doe</span>
+                            <span class="user-role">Utilisateur</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="content">
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Solde total</span>
+                            <span class="stat-icon">💰</span>
+                        </div>
+                        <span class="stat-value" id="totalBalance">0 FCFA</span>
+                        <span class="stat-change positive">+0%</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Cryptos</span>
+                            <span class="stat-icon">₿</span>
+                        </div>
+                        <span class="stat-value" id="totalCrypto">0.00</span>
+                        <span class="stat-label">Total actifs</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Transactions</span>
+                            <span class="stat-icon">📊</span>
+                        </div>
+                        <span class="stat-value" id="totalTransactions">0</span>
+                        <span class="stat-label">Au total</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">En attente</span>
+                            <span class="stat-icon">⏳</span>
+                        </div>
+                        <span class="stat-value" id="pendingTransactions">0</span>
+                        <span class="stat-label">À valider</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="action-btn primary" onclick="openModal('buy')">
+                        <span>🛒</span>
+                        <span>Acheter</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="openModal('sell')">
+                        <span>💵</span>
+                        <span>Vendre</span>
+                    </button>
+                    <button class="action-btn tertiary" onclick="openModal('convert')">
+                        <span>🔄</span>
+                        <span>Convertir</span>
+                    </button>
+                    <button class="action-btn quaternary" onclick="openModal('deposit')">
+                        <span>📥</span>
+                        <span>Déposer</span>
+                    </button>
+                    <button class="action-btn quinary" onclick="openModal('withdraw')">
+                        <span>📤</span>
+                        <span>Retirer</span>
+                    </button>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Dernières transactions</h2>
+                        <a href="#" class="see-all">Voir tout</a>
+                    </div>
+                    <div class="transactions-list" id="recentTransactions">
+                        <!-- Transactions will be loaded here -->
+                        <div class="empty-state">
+                            <p>Aucune transaction récente</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalContainer" class="modal-overlay" style="display: none;">
+        <!-- Modal content will be dynamically inserted -->
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

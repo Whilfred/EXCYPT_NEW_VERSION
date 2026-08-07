@@ -1,0 +1,94 @@
+<!-- pages/login.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - ExCrypt</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <a href="../index.html" class="auth-logo">
+                    <span class="logo-icon">₿</span>
+                    <span class="logo-text">ExCrypt</span>
+                </a>
+                <h1>Connexion</h1>
+                <p>Connectez-vous à votre compte ExCrypt</p>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="email">Adresse email</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="exemple@email.com"
+                            required
+                            autocomplete="email"
+                        />
+                        <span class="input-icon">📧</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Votre mot de passe"
+                            required
+                            autocomplete="current-password"
+                        />
+                        <span class="input-icon">🔒</span>
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" checked />
+                        <span>Se souvenir de moi</span>
+                    </label>
+                    <a href="forgot-password.html" class="forgot-link">Mot de passe oublié ?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                    <span class="btn-text">Se connecter</span>
+                    <span class="btn-loader" style="display: none;">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+
+                <div class="auth-divider">
+                    <span>ou</span>
+                </div>
+
+                <div class="auth-alternative">
+                    <p>Pas encore de compte ? <a href="register.html" class="auth-link">S'inscrire</a></p>
+                </div>
+            </form>
+
+            <div class="auth-footer">
+                <p>En vous connectant, vous acceptez nos <a href="#">Conditions d'utilisation</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container pour les notifications -->
+    <div class="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+</body>
+</html>
