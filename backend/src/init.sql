@@ -53,3 +53,22 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_balances_user ON balances(user_id);
+
+
+-- Migration : ajout des colonnes nécessaires à l'intégration SebPay.
+-- À exécuter une seule fois sur la base existante (ne modifie pas init.sql,
+-- qui reste la référence pour une base créée à partir de zéro — pensez à y
+-- reporter ces colonnes si vous régénérez la base plus tard).
+
+ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20)
+        CHECK (payment_method IN ('manuel', 'sebpay')),
+    ADD COLUMN IF NOT EXISTS operator_slug VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS provider_transaction_id VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS provider_link TEXT;
+
+-- Un provider_transaction_id doit être unique s'il est renseigné (permet de
+-- retrouver une transaction depuis un webhook via transaction_id SebPay).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_provider_tx_id
+    ON transactions(provider_transaction_id)
+    WHERE provider_transaction_id IS NOT NULL;

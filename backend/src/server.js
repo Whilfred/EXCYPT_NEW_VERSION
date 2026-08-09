@@ -9,11 +9,19 @@ const walletRoutes = require('./routes/walletRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const sebpayRoutes = require('./routes/sebpayRoutes');
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+
+// FIX SEBPAY : le webhook doit vérifier une signature HMAC calculée sur le
+// corps brut de la requête. express.json() ne conserve pas ce corps brut par
+// défaut ; l'option `verify` ci-dessous le capture dans req.rawBody pour
+// toutes les routes, sans rien changer au comportement du parsing JSON.
+app.use(express.json({
+    verify: (req, res, buf) => { req.rawBody = buf; }
+}));
 
 // Frontend
 app.use('/frontend', express.static(
@@ -31,6 +39,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/payments/sebpay', sebpayRoutes);
 
 // 404
 app.use((req, res) => {

@@ -1,17 +1,29 @@
-const { query } = require('../config/database');
+const { pool, query } = require('../config/database');
+
+// Exécute une requête via un client de transaction SQL existant (pool.connect())
+// si fourni, sinon via le pool global. Permet de réutiliser les mêmes fonctions
+// aussi bien dans un flux BEGIN/COMMIT (trade, convert, confirm...) qu'en dehors
+// (le flux SebPay, qui insère la transaction dans un appel puis la met à jour
+// dans un second appel séparé, après la réponse de l'API SebPay).
+function exec(client, text, params) {
+    return client ? client.query(text, params) : query(text, params);
+}
 
 async function createTransaction(client, userId, data) {
-    const result = await client.query(
+    const result = await exec(client,
         `INSERT INTO transactions
             (user_id, type, status, crypto, crypto_amount, fcfa_amount, network, phone, country,
-             from_currency, from_amount, to_currency, to_amount, address, tx_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+             from_currency, from_amount, to_currency, to_amount, address, tx_id,
+             payment_method, operator_slug, provider_transaction_id, provider_link)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
          RETURNING *`,
         [
             userId, data.type, data.status || 'en_attente', data.crypto || null, data.cryptoAmount || null,
             data.fcfaAmount || null, data.network || null, data.phone || null, data.country || null,
             data.fromCurrency || null, data.fromAmount || null, data.toCurrency || null, data.toAmount || null,
-            data.address || null, data.txId || null
+            data.address || null, data.txId || null,
+            data.paymentMethod || null, data.operatorSlug || null,
+            data.providerTransactionId || null, data.providerLink || null
         ]
     );
     return result.rows[0];
@@ -37,12 +49,55 @@ async function findByIdForUpdate(client, userId, id) {
     return result.rows[0] || null;
 }
 
+// Lecture simple (hors transaction SQL), utilisée par le polling frontend
+// (GET /payments/sebpay/collections/:id) et le resync manuel.
+async function findByIdForUser(userId, id) {
+    const result = await query('SELECT * FROM transactions WHERE id = $1 AND user_id = $2', [id, userId]);
+    return result.rows[0] || null;
+}
+
+// Utilisé par le webhook SebPay, qui est un appel serveur-à-serveur sans
+// req.user. external_reference correspond toujours à notre id interne
+// (voir sebpayController.initiateCollection), d'où l'absence de filtre user_id.
+async function findByIdRaw(id) {
+    if (!id || isNaN(parseInt(id, 10))) return null;
+    const result = await query('SELECT * FROM transactions WHERE id = $1', [id]);
+    return result.rows[0] || null;
+}
+
+async function findByProviderTransactionId(providerTransactionId) {
+    if (!providerTransactionId) return null;
+    const result = await query(
+        'SELECT * FROM transactions WHERE provider_transaction_id = $1',
+        [providerTransactionId]
+    );
+    return result.rows[0] || null;
+}
+
 async function updateStatus(client, id, status) {
-    const result = await client.query(
+    const result = await exec(client,
         'UPDATE transactions SET status = $2, updated_at = now() WHERE id = $1 RETURNING *',
         [id, status]
     );
     return result.rows[0];
 }
 
-module.exports = { createTransaction, listTransactions, findByIdForUpdate, updateStatus };
+// Renseigne l'identifiant de transaction SebPay et/ou le lien de redirection
+// (Wave) après l'appel POST /collections. Toujours hors transaction SQL.
+async function updatePaymentProviderInfo(id, { providerTransactionId, providerLink }) {
+    const result = await query(
+        `UPDATE transactions SET
+            provider_transaction_id = COALESCE($2, provider_transaction_id),
+            provider_link = COALESCE($3, provider_link),
+            updated_at = now()
+         WHERE id = $1
+         RETURNING *`,
+        [id, providerTransactionId || null, providerLink || null]
+    );
+    return result.rows[0];
+}
+
+module.exports = {
+    createTransaction, listTransactions, findByIdForUpdate, findByIdForUser,
+    findByIdRaw, findByProviderTransactionId, updateStatus, updatePaymentProviderInfo
+};
