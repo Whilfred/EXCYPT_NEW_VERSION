@@ -193,6 +193,12 @@
             .bottom-nav { display: block; }
         }
     </style>
+
+    <!-- Couche API partagée avec les pages login/register (voir js/api.js) -->
+    <!-- FIX: chemin corrigé, dashboard.html est dans /pages/, il faut donc remonter d'un niveau avec ../ -->
+    <script src="../js/api.js"></script>
+    <!-- Redirige vers la connexion si aucun token n'est présent -->
+    <script src="../js/auth-guard.js"></script>
 </head>
 <body>
     <div class="app">
@@ -266,261 +272,12 @@
 
     <script>
     /* =====================================================================
-       CONFIGURATION — à adapter lors du branchement au vrai backend
-       ===================================================================== */
-    const APP_CONFIG = {
-        API_BASE_URL: "https://api.excrypt.example/v1", // TODO BACKEND : remplacer par l'URL réelle de l'API
-        AUTH_TOKEN_KEY: "excrypt_auth_token"             // clé localStorage pour le JWT / token de session
-    };
-
-    /* =====================================================================
-       COUCHE API — chaque fonction simule aujourd'hui le backend via
-       localStorage. Le corps de chaque fonction contient, en commentaire,
-       l'appel fetch() réel à utiliser une fois l'API branchée : il suffit
-       de décommenter et de supprimer la partie "mock".
-       ===================================================================== */
-    const DB_KEY = "excrypt_mock_db_v1";
-
-    function getAuthToken() {
-        return localStorage.getItem(APP_CONFIG.AUTH_TOKEN_KEY) || null;
-    }
-
-    function authHeaders() {
-        const token = getAuthToken();
-        return token ? { "Authorization": `Bearer ${token}` } : {};
-    }
-
-    // Squelette générique pour un futur appel réseau (non utilisé par le mock,
-    // prêt à l'emploi pour brancher le backend plus tard).
-    async function apiRequest(endpoint, options = {}) {
-        const res = await fetch(`${APP_CONFIG.API_BASE_URL}${endpoint}`, {
-            headers: { "Content-Type": "application/json", ...authHeaders() },
-            ...options
-        });
-        if (!res.ok) throw new Error(`Erreur API ${res.status} sur ${endpoint}`);
-        return res.json();
-    }
-
-    function loadDB() {
-        const raw = localStorage.getItem(DB_KEY);
-        if (raw) return JSON.parse(raw);
-        const fresh = {
-            balances: { USDT: 0, BTC: 0, ETH: 0, BNB: 0 },
-            transactions: [],
-            profile: {
-                firstName: "Fathane",
-                lastName: "",
-                email: "",
-                phone: "",
-                country: "Burkina Faso",
-                kyc: "non_verifie" // non_verifie | en_attente | verifie
-            },
-            settings: {
-                theme: localStorage.getItem("theme") || "dark",
-                language: "fr",
-                notifications: { email: true, sms: true, push: false },
-                twoFactor: false
-            }
-        };
-        localStorage.setItem(DB_KEY, JSON.stringify(fresh));
-        return fresh;
-    }
-
-    function saveDB(db) {
-        localStorage.setItem(DB_KEY, JSON.stringify(db));
-    }
-
-    function delay(ms = 300) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    function genId() {
-        return "tx_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
-
-    const API = {
-
-        async getBalances() {
-            // TODO BACKEND : return apiRequest("/wallet/balances");
-            await delay();
-            return loadDB().balances;
-        },
-
-        async getTransactions(filter = "tous") {
-            // TODO BACKEND : return apiRequest(`/transactions?type=${filter}`);
-            await delay();
-            const db = loadDB();
-            const list = [...db.transactions].sort((a, b) => b.createdAt - a.createdAt);
-            if (filter === "tous") return list;
-            return list.filter(t => t.type === filter);
-        },
-
-        async getProfile() {
-            // TODO BACKEND : return apiRequest("/profile");
-            await delay();
-            return loadDB().profile;
-        },
-
-        async updateProfile(data) {
-            // TODO BACKEND : return apiRequest("/profile", { method: "PATCH", body: JSON.stringify(data) });
-            await delay();
-            const db = loadDB();
-            db.profile = { ...db.profile, ...data };
-            saveDB(db);
-            return db.profile;
-        },
-
-        async getSettings() {
-            // TODO BACKEND : return apiRequest("/settings");
-            await delay();
-            return loadDB().settings;
-        },
-
-        async updateSettings(data) {
-            // TODO BACKEND : return apiRequest("/settings", { method: "PATCH", body: JSON.stringify(data) });
-            await delay();
-            const db = loadDB();
-            db.settings = { ...db.settings, ...data };
-            saveDB(db);
-            return db.settings;
-        },
-
-        async changePassword(currentPassword, newPassword) {
-            // TODO BACKEND : return apiRequest("/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
-            await delay(500);
-            return { success: true };
-        },
-
-        // Achat / Vente réglées en mobile money (hors solde interne FCFA)
-        async executeTrade({ type, crypto, cryptoAmount, fcfaAmount, country, network, phone }) {
-            // TODO BACKEND : return apiRequest("/trade", { method: "POST", body: JSON.stringify({ type, crypto, cryptoAmount, fcfaAmount, country, network, phone }) });
-            await delay(500);
-            const db = loadDB();
-
-            if (type === "vente" && db.balances[crypto] < cryptoAmount) {
-                throw new Error(`Solde ${crypto} insuffisant pour cette vente.`);
-            }
-
-            if (type === "achat") db.balances[crypto] += cryptoAmount;
-            if (type === "vente") db.balances[crypto] -= cryptoAmount;
-
-            const tx = {
-                id: genId(),
-                type,
-                status: "en_attente", // confirmé après réception du paiement mobile money
-                crypto,
-                cryptoAmount,
-                fcfaAmount,
-                network,
-                phone,
-                country,
-                createdAt: Date.now()
-            };
-            db.transactions.push(tx);
-            saveDB(db);
-            return tx;
-        },
-
-        async executeConvert({ fromCurrency, fromAmount, toCurrency, toAmount }) {
-            // TODO BACKEND : return apiRequest("/convert", { method: "POST", body: JSON.stringify({ fromCurrency, fromAmount, toCurrency, toAmount }) });
-            await delay(500);
-            const db = loadDB();
-
-            if (fromCurrency !== "FCFA" && db.balances[fromCurrency] < fromAmount) {
-                throw new Error(`Solde ${fromCurrency} insuffisant pour cette conversion.`);
-            }
-
-            if (fromCurrency !== "FCFA") db.balances[fromCurrency] -= fromAmount;
-            if (toCurrency !== "FCFA") db.balances[toCurrency] = (db.balances[toCurrency] || 0) + toAmount;
-
-            const tx = {
-                id: genId(),
-                type: "conversion",
-                status: "termine",
-                fromCurrency, fromAmount, toCurrency, toAmount,
-                createdAt: Date.now()
-            };
-            db.transactions.push(tx);
-            saveDB(db);
-            return tx;
-        },
-
-        async requestDeposit({ crypto, network, amount, txId }) {
-            // TODO BACKEND : return apiRequest("/wallet/deposit", { method: "POST", body: JSON.stringify({ crypto, network, amount, txId }) });
-            await delay(500);
-            const db = loadDB();
-            const tx = {
-                id: genId(),
-                type: "depot",
-                status: "en_attente", // confirmé après validation on-chain (webhook backend)
-                crypto, network,
-                cryptoAmount: amount || null,
-                txId: txId || null,
-                createdAt: Date.now()
-            };
-            db.transactions.push(tx);
-            saveDB(db);
-            return tx;
-        },
-
-        async requestWithdraw({ crypto, network, address, amount }) {
-            // TODO BACKEND : return apiRequest("/wallet/withdraw", { method: "POST", body: JSON.stringify({ crypto, network, address, amount }) });
-            await delay(500);
-            const db = loadDB();
-
-            if (db.balances[crypto] < amount) {
-                throw new Error(`Solde ${crypto} insuffisant pour ce retrait.`);
-            }
-            db.balances[crypto] -= amount; // réservé le temps de la confirmation on-chain
-
-            const tx = {
-                id: genId(),
-                type: "retrait",
-                status: "en_attente",
-                crypto, network, address,
-                cryptoAmount: amount,
-                createdAt: Date.now()
-            };
-            db.transactions.push(tx);
-            saveDB(db);
-            return tx;
-        },
-
-        // Simule la confirmation d'une transaction en attente (webhook côté backend réel)
-        async confirmTransaction(id) {
-            // TODO BACKEND : côté réel, cette étape vient d'un webhook (mobile money / blockchain), pas d'un clic utilisateur.
-            await delay(400);
-            const db = loadDB();
-            const tx = db.transactions.find(t => t.id === id);
-            if (!tx) throw new Error("Transaction introuvable.");
-            tx.status = "termine";
-            if (tx.type === "depot" && tx.cryptoAmount) {
-                db.balances[tx.crypto] = (db.balances[tx.crypto] || 0) + tx.cryptoAmount;
-            }
-            saveDB(db);
-            return tx;
-        },
-
-        async cancelTransaction(id) {
-            // TODO BACKEND : return apiRequest(`/transactions/${id}/cancel`, { method: "POST" });
-            await delay(400);
-            const db = loadDB();
-            const tx = db.transactions.find(t => t.id === id);
-            if (!tx) throw new Error("Transaction introuvable.");
-            tx.status = "echoue";
-            if (tx.type === "retrait") {
-                db.balances[tx.crypto] = (db.balances[tx.crypto] || 0) + tx.cryptoAmount; // on rembourse le solde réservé
-            }
-            saveDB(db);
-            return tx;
-        }
-    };
-
-    /* =====================================================================
-       DONNÉES STATIQUES DE RÉFÉRENCE
+       Ce fichier consomme désormais le vrai backend via l'objet global
+       `API` défini dans js/api.js (auth, wallet, transactions, profile,
+       settings). Il n'y a plus aucune donnée simulée en localStorage ici.
        ===================================================================== */
 
-    /* Réseaux mobile money par pays (Afrique de l'Ouest) */
+    /* Réseaux mobile money par pays (Afrique de l'Ouest) — données statiques côté frontend */
     const paymentNetworks = {
         "Burkina Faso": ["Orange Money BF", "Moov Africa BF", "Coris Money"],
         "Côte d'Ivoire": ["MTN Money CI", "Orange Money CI", "Moov Money CI", "Wave CI"],
@@ -532,7 +289,8 @@
         "Guinée": ["Orange Money GN", "MTN Money GN"]
     };
 
-    /* Taux indicatifs : 1 unité de crypto = X FCFA — TODO BACKEND : remplacer par un flux de cours temps réel */
+    /* Taux par défaut (avant le premier chargement) — synchronisés avec ceux
+       renvoyés par GET /api/wallet/balances via syncRates() */
     const cryptoRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
 
     /* Réseaux blockchain disponibles par crypto (dépôt / retrait) */
@@ -543,7 +301,8 @@
         BNB: ["BEP20 (BNB Smart Chain)"]
     };
 
-    /* Adresses de dépôt de démonstration — TODO BACKEND : générer une adresse unique par utilisateur via l'API */
+    /* TODO BACKEND : remplacer par une adresse de dépôt unique par utilisateur,
+       générée côté serveur (endpoint GET /api/wallet/deposit-address?crypto=&network=) */
     const depositAddresses = {
         "USDT|TRC20 (Tron)": "TQn9Y2khD5f8mE3z1XwWq7v6b4Rk8sFAKE1",
         "USDT|ERC20 (Ethereum)": "0x8f3a2C1dE4b7A9f0C6d5E2b1A9f0C6d5FAKE2",
@@ -553,16 +312,51 @@
         "BNB|BEP20 (BNB Smart Chain)": "bnb1FAKE6q7v6b4Rk8s2C1dE4b7A9f0C6d5"
     };
 
-    const TX_LABELS = {
-        achat: "Achat", vente: "Vente", conversion: "Conversion",
-        depot: "Dépôt", retrait: "Retrait"
-    };
-    const STATUS_LABELS = {
-        termine: "Terminé", en_attente: "En attente", echoue: "Échoué"
-    };
-    const STATUS_BADGE = {
-        termine: "badge-done", en_attente: "badge-pending", echoue: "badge-failed"
-    };
+    const TX_LABELS = { achat: "Achat", vente: "Vente", conversion: "Conversion", depot: "Dépôt", retrait: "Retrait" };
+    const STATUS_LABELS = { termine: "Terminé", en_attente: "En attente", echoue: "Échoué" };
+    const STATUS_BADGE = { termine: "badge-done", en_attente: "badge-pending", echoue: "badge-failed" };
+
+    /* =====================================================================
+       ADAPTATEURS — le backend renvoie du snake_case (colonnes SQL) ;
+       ces fonctions convertissent vers le format utilisé par l'UI.
+       ===================================================================== */
+
+    function normalizeTx(tx) {
+        return {
+            id: tx.id,
+            type: tx.type,
+            status: tx.status,
+            crypto: tx.crypto,
+            cryptoAmount: tx.crypto_amount !== null && tx.crypto_amount !== undefined ? parseFloat(tx.crypto_amount) : null,
+            fcfaAmount: tx.fcfa_amount !== null && tx.fcfa_amount !== undefined ? parseFloat(tx.fcfa_amount) : null,
+            network: tx.network,
+            phone: tx.phone,
+            country: tx.country,
+            fromCurrency: tx.from_currency,
+            fromAmount: tx.from_amount !== null && tx.from_amount !== undefined ? parseFloat(tx.from_amount) : null,
+            toCurrency: tx.to_currency,
+            toAmount: tx.to_amount !== null && tx.to_amount !== undefined ? parseFloat(tx.to_amount) : null,
+            address: tx.address,
+            txId: tx.tx_id,
+            createdAt: new Date(tx.created_at).getTime()
+        };
+    }
+
+    function normalizeProfile(p) {
+        return {
+            firstName: p.first_name,
+            lastName: p.last_name,
+            email: p.email,
+            phone: p.phone,
+            country: p.country,
+            kyc: p.kyc_status
+        };
+    }
+
+    function syncRates(rates) {
+        if (!rates) return;
+        Object.keys(rates).forEach(c => { if (cryptoRates[c] !== undefined) cryptoRates[c] = rates[c]; });
+    }
 
     /* =====================================================================
        UTILITAIRES UI
@@ -576,17 +370,9 @@
         window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
     }
 
-    function fmtFCFA(n) {
-        return Math.round(n).toLocaleString("fr-FR") + " FCFA";
-    }
-
-    function fmtCrypto(n) {
-        return Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 6 });
-    }
-
-    function fmtDate(ts) {
-        return new Date(ts).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-    }
+    function fmtFCFA(n) { return Math.round(n).toLocaleString("fr-FR") + " FCFA"; }
+    function fmtCrypto(n) { return Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 6 }); }
+    function fmtDate(ts) { return new Date(ts).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
 
     function backLink() {
         return `<div style="margin-bottom: 20px;">
@@ -594,13 +380,8 @@
         </div>`;
     }
 
-    function countryOptions() {
-        return Object.keys(paymentNetworks).map(c => `<option value="${c}">${c}</option>`).join('');
-    }
-
-    function cryptoOptions() {
-        return Object.keys(cryptoRates).map(c => `<option value="${c}">${c}</option>`).join('');
-    }
+    function countryOptions() { return Object.keys(paymentNetworks).map(c => `<option value="${c}">${c}</option>`).join(''); }
+    function cryptoOptions() { return Object.keys(cryptoRates).map(c => `<option value="${c}">${c}</option>`).join(''); }
 
     function txIconSvg(type) {
         const icons = {
@@ -613,6 +394,24 @@
         return icons[type] || icons.conversion;
     }
 
+    /* Gestion centralisée des erreurs API : si la session a expiré,
+       apiRequest() a déjà vidé le token — on renvoie alors vers la connexion. */
+    function handleApiError(err, container) {
+        console.error(err);
+        showToast(err.message || 'Erreur réseau');
+        if (!isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
+        if (container) {
+            container.innerHTML = `
+                <div class="card-section" style="text-align:center; padding:60px 20px;">
+                    <p style="color:var(--muted); margin-bottom:16px;">${err.message || 'Impossible de charger les données.'}</p>
+                    <button class="btn-secondary" style="max-width:220px; margin:0 auto;" onclick="switchTab('dashboard')">Réessayer</button>
+                </div>`;
+        }
+    }
+
     /* =====================================================================
        NAVIGATION
        ===================================================================== */
@@ -622,16 +421,20 @@
         const mainContent = document.getElementById('mainContent');
         mainContent.innerHTML = `<div class="card-section" style="text-align:center; padding:60px 20px; color:var(--muted);">Chargement...</div>`;
 
-        if (tabName === 'dashboard') { setActiveMenus('dashboard'); await renderDashboard(); }
-        else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderTradeForm('achat'); }
-        else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderTradeForm('vente'); }
-        else if (tabName === 'convertir') { setActiveMenus('dashboard'); await renderConvert(); }
-        else if (tabName === 'deposer') { setActiveMenus('dashboard'); await renderDeposit(presetCrypto); }
-        else if (tabName === 'retirer') { setActiveMenus('dashboard'); await renderWithdraw(presetCrypto); }
-        else if (tabName === 'portefeuille') { setActiveMenus('portefeuille'); await renderWallet(); }
-        else if (tabName === 'transactions') { setActiveMenus('transactions'); await renderTransactions('tous'); }
-        else if (tabName === 'profil') { setActiveMenus('profil'); await renderProfil(); }
-        else if (tabName === 'parametres') { setActiveMenus('parametres'); await renderParametres(); }
+        try {
+            if (tabName === 'dashboard') { setActiveMenus('dashboard'); await renderDashboard(); }
+            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderTradeForm('achat'); }
+            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderTradeForm('vente'); }
+            else if (tabName === 'convertir') { setActiveMenus('dashboard'); await renderConvert(); }
+            else if (tabName === 'deposer') { setActiveMenus('dashboard'); await renderDeposit(presetCrypto); }
+            else if (tabName === 'retirer') { setActiveMenus('dashboard'); await renderWithdraw(presetCrypto); }
+            else if (tabName === 'portefeuille') { setActiveMenus('portefeuille'); await renderWallet(); }
+            else if (tabName === 'transactions') { setActiveMenus('transactions'); await renderTransactions('tous'); }
+            else if (tabName === 'profil') { setActiveMenus('profil'); await renderProfil(); }
+            else if (tabName === 'parametres') { setActiveMenus('parametres'); await renderParametres(); }
+        } catch (err) {
+            handleApiError(err, mainContent);
+        }
     }
 
     function setActiveMenus(tabName) {
@@ -648,11 +451,19 @@
         }
     }
 
+    let __currentTab = 'dashboard';
+    const __origSwitchTab = switchTab;
+    switchTab = async function (tabName, presetCrypto) {
+        __currentTab = tabName;
+        await __origSwitchTab(tabName, presetCrypto);
+    };
+
+    function refreshCurrentTab() { switchTab(__currentTab); }
+
     function handleLogout() {
         if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-            // TODO BACKEND : invalider la session côté serveur puis rediriger vers /login
-            localStorage.removeItem(APP_CONFIG.AUTH_TOKEN_KEY);
-            alert("Déconnexion...");
+            clearSession();
+            window.location.href = 'login.html';
         }
     }
 
@@ -661,11 +472,18 @@
        ===================================================================== */
 
     async function renderDashboard() {
-        const [balances, transactions, profile] = await Promise.all([
-            API.getBalances(), API.getTransactions('tous'), API.getProfile()
+        const [balancesRes, txRes, meRes] = await Promise.all([
+            API.wallet.getBalances(),
+            API.transactions.list('tous'),
+            API.auth.me()
         ]);
 
-        const totalFCFA = Object.entries(balances).reduce((sum, [c, amt]) => sum + amt * cryptoRates[c], 0);
+        syncRates(balancesRes.rates);
+        const balances = balancesRes.balances;
+        const totalFCFA = balancesRes.totalFCFA;
+        const transactions = txRes.transactions.map(normalizeTx);
+        const profile = normalizeProfile(meRes.user);
+
         const totalAssets = Object.values(balances).reduce((s, v) => s + v, 0);
         const pendingCount = transactions.filter(t => t.status === 'en_attente').length;
         const recent = transactions.slice(0, 5);
@@ -680,13 +498,13 @@
 
         document.getElementById('mainContent').innerHTML = `
             <div class="topbar">
-                <h1>Bonjour ${profile.firstName || 'Fathane'}</h1>
+                <h1>Bonjour ${profile.firstName || ''}</h1>
                 <div class="topbar-actions">
                     <div class="icon-btn" onclick="switchTab('transactions')">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         ${pendingCount > 0 ? '<span class="dot"></span>' : ''}
                     </div>
-                    <div class="user-avatar" onclick="switchTab('profil')">${(profile.firstName || 'F').charAt(0).toUpperCase()}</div>
+                    <div class="user-avatar" onclick="switchTab('profil')">${(profile.firstName || '?').charAt(0).toUpperCase()}</div>
                 </div>
             </div>
 
@@ -807,26 +625,19 @@
 
     async function onConfirmTx(id) {
         try {
-            await API.confirmTransaction(id);
+            await API.transactions.confirm(id);
             showToast("Transaction confirmée");
             refreshCurrentTab();
-        } catch (e) { showToast(e.message); }
+        } catch (e) { handleApiError(e); }
     }
 
     async function onCancelTx(id) {
         if (!confirm("Annuler cette transaction ?")) return;
         try {
-            await API.cancelTransaction(id);
+            await API.transactions.cancel(id);
             showToast("Transaction annulée");
             refreshCurrentTab();
-        } catch (e) { showToast(e.message); }
-    }
-
-    function refreshCurrentTab() {
-        const active = document.querySelector('.sidebar-menu li.active');
-        const labelMap = { 'Tableau de bord': 'dashboard', 'Portefeuille': 'portefeuille', 'Transactions': 'transactions', 'Profil': 'profil', 'Paramètres': 'parametres' };
-        const label = active ? active.textContent.trim() : 'Tableau de bord';
-        switchTab(labelMap[label] || 'dashboard');
+        } catch (e) { handleApiError(e); }
     }
 
     /* =====================================================================
@@ -940,14 +751,13 @@
         try {
             const crypto = currentTradeCrypto();
             const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
-            const fcfaAmount = parseFloat(document.getElementById('cfaInput').value);
-            const country = document.getElementById('countrySelect').value;
             const network = document.getElementById('networkSelect').value;
             const phone = document.getElementById('phoneNumber').value;
+            const country = document.getElementById('countrySelect').value;
 
-            if (!cryptoAmount || !fcfaAmount) throw new Error('Merci de renseigner un montant valide.');
+            if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
 
-            await API.executeTrade({ type, crypto, cryptoAmount, fcfaAmount, country, network, phone });
+            await API.transactions.trade({ type, crypto, cryptoAmount, network, phone, country });
             showToast(`${type === 'achat' ? 'Achat' : 'Vente'} enregistré(e). Confirmation en attente.`);
             switchTab('dashboard');
         } catch (e) {
@@ -962,7 +772,10 @@
        ===================================================================== */
 
     async function renderConvert() {
-        const balances = await API.getBalances();
+        const balancesRes = await API.wallet.getBalances();
+        syncRates(balancesRes.rates);
+        window.__balancesCache = balancesRes.balances;
+
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
@@ -1010,22 +823,14 @@
                 </div>
             </div>
         `;
-        window.__balancesCache = balances;
         document.getElementById('toCurrency').value = 'USDT';
         document.getElementById('convertForm').addEventListener('submit', handleConvertSubmit);
         updateConvRateLabel();
         updateFromBalanceHint();
     }
 
-    function valueInFCFA(amount, currency) {
-        if (currency === 'FCFA') return amount;
-        return amount * cryptoRates[currency];
-    }
-
-    function fromFCFA(amountFCFA, currency) {
-        if (currency === 'FCFA') return amountFCFA;
-        return amountFCFA / cryptoRates[currency];
-    }
+    function valueInFCFA(amount, currency) { return currency === 'FCFA' ? amount : amount * cryptoRates[currency]; }
+    function fromFCFA(amountFCFA, currency) { return currency === 'FCFA' ? amountFCFA : amountFCFA / cryptoRates[currency]; }
 
     function updateFromBalanceHint() {
         const from = document.getElementById('fromCurrency').value;
@@ -1092,7 +897,7 @@
             const toAmount = parseFloat(document.getElementById('toAmount').value);
             if (!fromAmount || !toAmount) throw new Error('Merci de renseigner un montant valide.');
 
-            await API.executeConvert({ fromCurrency, fromAmount, toCurrency, toAmount });
+            await API.transactions.convert({ fromCurrency, fromAmount, toCurrency, toAmount });
             showToast('Conversion effectuée avec succès.');
             switchTab('dashboard');
         } catch (e) {
@@ -1198,7 +1003,7 @@
             const amount = parseFloat(document.getElementById('depositAmount').value) || null;
             const txId = document.getElementById('depositTxId').value || null;
 
-            await API.requestDeposit({ crypto, network, amount, txId });
+            await API.transactions.deposit({ crypto, network, amount, txId });
             showToast('Dépôt enregistré. En attente de confirmation blockchain.');
             switchTab('transactions');
         } catch (e) {
@@ -1213,8 +1018,9 @@
        ===================================================================== */
 
     async function renderWithdraw(presetCrypto) {
-        const balances = await API.getBalances();
-        window.__balancesCache = balances;
+        const balancesRes = await API.wallet.getBalances();
+        syncRates(balancesRes.rates);
+        window.__balancesCache = balancesRes.balances;
 
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
@@ -1289,7 +1095,7 @@
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             if (!amount) throw new Error('Merci de renseigner un montant valide.');
 
-            await API.requestWithdraw({ crypto, network, address, amount });
+            await API.transactions.withdraw({ crypto, network, address, amount });
             showToast('Retrait initié. Traitement en cours.');
             switchTab('transactions');
         } catch (e) {
@@ -1304,8 +1110,10 @@
        ===================================================================== */
 
     async function renderWallet() {
-        const balances = await API.getBalances();
-        const totalFCFA = Object.entries(balances).reduce((s, [c, a]) => s + a * cryptoRates[c], 0);
+        const balancesRes = await API.wallet.getBalances();
+        syncRates(balancesRes.rates);
+        const balances = balancesRes.balances;
+        const totalFCFA = balancesRes.totalFCFA;
 
         const cardsHTML = Object.keys(cryptoRates).map(c => {
             const amt = balances[c] || 0;
@@ -1342,7 +1150,9 @@
        ===================================================================== */
 
     async function renderTransactions(filter) {
-        const transactions = await API.getTransactions(filter);
+        __currentTab = 'transactions';
+        const txRes = await API.transactions.list(filter);
+        const transactions = txRes.transactions.map(normalizeTx);
 
         const chips = [
             { key: 'tous', label: 'Tous' },
@@ -1377,14 +1187,15 @@
        ===================================================================== */
 
     async function renderProfil() {
-        const profile = await API.getProfile();
+        const res = await API.profile.get();
+        const profile = normalizeProfile(res.profile);
         const kycMap = {
             non_verifie: { label: 'Non vérifié', badge: 'badge-failed' },
             en_attente: { label: 'Vérification en cours', badge: 'badge-pending' },
             verifie: { label: 'Vérifié', badge: 'badge-done' }
         };
         const kyc = kycMap[profile.kyc] || kycMap.non_verifie;
-        const initial = (profile.firstName || 'F').charAt(0).toUpperCase();
+        const initial = (profile.firstName || '?').charAt(0).toUpperCase();
 
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="topbar"><h1>Profil</h1></div>
@@ -1446,7 +1257,7 @@
         btn.disabled = true;
         btn.textContent = 'Enregistrement...';
         try {
-            await API.updateProfile({
+            await API.profile.update({
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,
                 email: document.getElementById('email').value,
@@ -1463,10 +1274,11 @@
     }
 
     async function startKyc() {
-        // TODO BACKEND : rediriger vers le prestataire KYC ou ouvrir le flux de vérification d'identité
-        await API.updateProfile({ kyc: 'en_attente' });
-        showToast('Vérification d\'identité lancée');
-        renderProfil();
+        try {
+            await API.profile.startKyc();
+            showToast("Vérification d'identité lancée");
+            renderProfil();
+        } catch (e) { showToast(e.message); }
     }
 
     /* =====================================================================
@@ -1474,7 +1286,8 @@
        ===================================================================== */
 
     async function renderParametres() {
-        const settings = await API.getSettings();
+        const res = await API.settings.get();
+        const settings = res.settings;
 
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="topbar"><h1>Paramètres</h1></div>
@@ -1570,25 +1383,28 @@
     }
 
     async function setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light-explicit');
-        if (theme === 'light') document.documentElement.removeAttribute('data-theme');
-        else document.documentElement.setAttribute('data-theme', 'dark');
+        if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('theme', theme);
         highlightThemeButtons(theme);
-        await API.updateSettings({ theme });
+        try {
+            await API.settings.update({ theme });
+        } catch (e) { showToast(e.message); }
     }
 
     async function onSettingChange() {
-        await API.updateSettings({
-            language: document.getElementById('languageSelect').value,
-            notifications: {
-                email: document.getElementById('notifEmail').checked,
-                sms: document.getElementById('notifSms').checked,
-                push: document.getElementById('notifPush').checked
-            },
-            twoFactor: document.getElementById('twoFactor').checked
-        });
-        showToast('Préférences enregistrées');
+        try {
+            await API.settings.update({
+                language: document.getElementById('languageSelect').value,
+                notifications: {
+                    email: document.getElementById('notifEmail').checked,
+                    sms: document.getElementById('notifSms').checked,
+                    push: document.getElementById('notifPush').checked
+                },
+                twoFactor: document.getElementById('twoFactor').checked
+            });
+            showToast('Préférences enregistrées');
+        } catch (e) { showToast(e.message); }
     }
 
     async function handlePasswordSubmit(event) {
@@ -1596,14 +1412,14 @@
         const btn = document.getElementById('passwordSubmitBtn');
         const current = document.getElementById('currentPassword').value;
         const next = document.getElementById('newPassword').value;
-        const confirm = document.getElementById('confirmPassword').value;
+        const confirmVal = document.getElementById('confirmPassword').value;
 
-        if (next !== confirm) { showToast('Les mots de passe ne correspondent pas.'); return; }
+        if (next !== confirmVal) { showToast('Les mots de passe ne correspondent pas.'); return; }
 
         btn.disabled = true;
         btn.textContent = 'Modification...';
         try {
-            await API.changePassword(current, next);
+            await API.settings.changePassword({ currentPassword: current, newPassword: next });
             showToast('Mot de passe mis à jour');
             document.getElementById('passwordForm').reset();
         } catch (e) {
@@ -1618,14 +1434,18 @@
        INITIALISATION
        ===================================================================== */
 
+    (function applyCachedTheme() {
+        const cached = localStorage.getItem('theme');
+        if (cached === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else if (cached === 'light') document.documentElement.removeAttribute('data-theme');
+    })();
+
     (async function init() {
-        const db = loadDB();
-        if (db.settings.theme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.removeAttribute('data-theme');
+        try {
+            await renderDashboard();
+        } catch (err) {
+            handleApiError(err, document.getElementById('mainContent'));
         }
-        await renderDashboard();
     })();
     </script>
 </body>

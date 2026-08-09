@@ -1,248 +1,89 @@
-// js/api.js - Version sans export
-const API_BASE_URL = 'http://localhost:5000/api';
+// js/api.js
+const API_BASE_URL = "http://localhost:4000/api"; // TODO: remplacer par l'URL de prod
 
-class ApiClient {
-    constructor() {
-        this.baseURL = API_BASE_URL;
-        this.token = localStorage.getItem('auth_token');
-    }
+const TOKEN_KEY = "excrypt_token";
+const USER_KEY = "excrypt_user";
 
-    setToken(token) {
-        this.token = token;
-        if (token) {
-            localStorage.setItem('auth_token', token);
-        } else {
-            localStorage.removeItem('auth_token');
-        }
-    }
-
-    getHeaders() {
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
-        return headers;
-    }
-
-    async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
-        const config = {
-            ...options,
-            headers: {
-                ...this.getHeaders(),
-                ...options.headers,
-            },
-        };
-
-        try {
-            const response = await fetch(url, config);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Une erreur est survenue');
-            }
-
-            return data;
-        } catch (error) {
-            if (error.message === 'Failed to fetch') {
-                throw new Error('Impossible de se connecter au serveur');
-            }
-            throw error;
-        }
-    }
-
-    get(endpoint) {
-        return this.request(endpoint, { method: 'GET' });
-    }
-
-    post(endpoint, body) {
-        return this.request(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(body),
-        });
-    }
-
-    put(endpoint, body) {
-        return this.request(endpoint, {
-            method: 'PUT',
-            body: JSON.stringify(body),
-        });
-    }
-
-    delete(endpoint) {
-        return this.request(endpoint, { method: 'DELETE' });
-    }
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
 }
 
-// Auth endpoints
-class AuthAPI {
-    constructor(client) {
-        this.client = client;
-    }
-
-    async register(data) {
-        return this.client.post('/auth/register', data);
-    }
-
-    async login(email, password) {
-        const response = await this.client.post('/auth/login', { email, password });
-        if (response.data && response.data.token) {
-            this.client.setToken(response.data.token);
-        }
-        return response;
-    }
-
-    async forgotPassword(email) {
-        return this.client.post('/auth/forgot-password', { email });
-    }
-
-    async resetPassword(token, newPassword) {
-        return this.client.post('/auth/reset-password', { token, newPassword });
-    }
-
-    logout() {
-        this.client.setToken(null);
-    }
-
-    getCurrentUser() {
-        return this.client.get('/auth/me');
-    }
+function setSession(token, user) {
+    localStorage.setItem(TOKEN_KEY, token);
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-// Transaction endpoints
-class TransactionAPI {
-    constructor(client) {
-        this.client = client;
-    }
-
-    async getTransactions(filters = {}) {
-        const params = new URLSearchParams(filters).toString();
-        return this.client.get(`/transactions?${params}`);
-    }
-
-    async createBuy(data) {
-        return this.client.post('/transactions/buy', data);
-    }
-
-    async createSell(data) {
-        return this.client.post('/transactions/sell', data);
-    }
-
-    async createDeposit(data) {
-        return this.client.post('/transactions/deposit', data);
-    }
-
-    async createWithdrawal(data) {
-        return this.client.post('/transactions/withdrawal', data);
-    }
-
-    async getTransaction(id) {
-        return this.client.get(`/transactions/${id}`);
-    }
+function clearSession() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
 }
 
-// Wallet endpoints
-class WalletAPI {
-    constructor(client) {
-        this.client = client;
-    }
-
-    async getWallet() {
-        return this.client.get('/wallet');
-    }
-
-    async getCryptoPrices() {
-        return this.client.get('/wallet/prices');
-    }
+function getStoredUser() {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
 }
 
-// Admin endpoints
-class AdminAPI {
-    constructor(client) {
-        this.client = client;
-    }
-
-    async getDashboardStats() {
-        return this.client.get('/admin/dashboard');
-    }
-
-    async getPendingTransactions(filters = {}) {
-        const params = new URLSearchParams(filters).toString();
-        return this.client.get(`/admin/transactions/pending?${params}`);
-    }
-
-    async validateTransaction(transactionId, data) {
-        return this.client.put(`/admin/transactions/${transactionId}/validate`, data);
-    }
-
-    async updateCryptoPrice(data) {
-        return this.client.put('/admin/prices', data);
-    }
-
-    async toggleUserStatus(userId) {
-        return this.client.put(`/admin/users/${userId}/toggle`);
-    }
-
-    async getUsers(filters = {}) {
-        const params = new URLSearchParams(filters).toString();
-        return this.client.get(`/admin/users?${params}`);
-    }
-
-    async getKYCSubmissions(filters = {}) {
-        const params = new URLSearchParams(filters).toString();
-        return this.client.get(`/admin/kyc?${params}`);
-    }
-
-    async validateKYC(kycId, status, reason = '') {
-        return this.client.put(`/admin/kyc/${kycId}`, { status, reason });
-    }
+function isAuthenticated() {
+    return !!getToken();
 }
 
-// Initialize API
-const apiClient = new ApiClient();
-const authAPI = new AuthAPI(apiClient);
-const transactionAPI = new TransactionAPI(apiClient);
-const walletAPI = new WalletAPI(apiClient);
-const adminAPI = new AdminAPI(apiClient);
-
-// Toast notification system
-function showToast(message, type = 'info') {
-    const container = document.querySelector('.toast-container') || (() => {
-        const div = document.createElement('div');
-        div.className = 'toast-container';
-        document.body.appendChild(div);
-        return div;
-    })();
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
+async function apiRequest(endpoint, options = {}) {
+    const token = getToken();
+    const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {})
     };
-    
-    toast.innerHTML = `
-        <span>${icons[type] || icons.info}</span>
-        <span>${message}</span>
-    `;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
+
+    let res;
+    try {
+        res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    } catch (networkErr) {
+        throw new Error("Impossible de contacter le serveur. Vérifiez votre connexion.");
+    }
+
+    let data = null;
+    try { data = await res.json(); } catch (_) { /* réponse vide */ }
+
+    if (!res.ok) {
+        if (res.status === 401) clearSession();
+        throw new Error((data && data.error) || `Erreur ${res.status}`);
+    }
+    return data;
 }
 
-// Rendre les fonctions globales
-window.authAPI = authAPI;
-window.transactionAPI = transactionAPI;
-window.walletAPI = walletAPI;
-window.adminAPI = adminAPI;
-window.showToast = showToast;
+const API = {
+    auth: {
+        register(payload) {
+            return apiRequest("/auth/register", { method: "POST", body: JSON.stringify(payload) });
+        },
+        login(payload) {
+            return apiRequest("/auth/login", { method: "POST", body: JSON.stringify(payload) });
+        },
+        me() {
+            return apiRequest("/auth/me");
+        }
+    },
+    wallet: {
+        getBalances() { return apiRequest("/wallet/balances"); }
+    },
+    transactions: {
+        list(type = "tous") { return apiRequest(`/transactions?type=${type}`); },
+        trade(payload) { return apiRequest("/transactions/trade", { method: "POST", body: JSON.stringify(payload) }); },
+        convert(payload) { return apiRequest("/transactions/convert", { method: "POST", body: JSON.stringify(payload) }); },
+        deposit(payload) { return apiRequest("/transactions/deposit", { method: "POST", body: JSON.stringify(payload) }); },
+        withdraw(payload) { return apiRequest("/transactions/withdraw", { method: "POST", body: JSON.stringify(payload) }); },
+        confirm(id) { return apiRequest(`/transactions/${id}/confirm`, { method: "POST" }); },
+        cancel(id) { return apiRequest(`/transactions/${id}/cancel`, { method: "POST" }); }
+    },
+    profile: {
+        get() { return apiRequest("/profile"); },
+        update(payload) { return apiRequest("/profile", { method: "PATCH", body: JSON.stringify(payload) }); },
+        startKyc() { return apiRequest("/profile/kyc", { method: "POST" }); }
+    },
+    settings: {
+        get() { return apiRequest("/settings"); },
+        update(payload) { return apiRequest("/settings", { method: "PATCH", body: JSON.stringify(payload) }); },
+        changePassword(payload) { return apiRequest("/settings/change-password", { method: "POST", body: JSON.stringify(payload) }); }
+    }
+};
