@@ -257,13 +257,13 @@
 }
 
 .req-item {
-    color: var(--text-light);
+    color: #848e9c;
     transition: var(--transition);
     padding: 2px 0;
 }
 
 .req-item.valid {
-    color: var(--success);
+    color: #0ecb81;
 }
 
 .req-item.invalid {
@@ -297,41 +297,13 @@
 }
 
 /* Toast notifications */
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-width: 400px;
-}
-
-.toast {
-    padding: 16px 20px;
-    border-radius: var(--radius);
-    background: white;
-    box-shadow: var(--shadow-lg);
-    border-left: 4px solid var(--primary);
-    animation: slideInRight 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.toast.success {
-    border-left-color: var(--success);
-}
-
-.toast.error {
-    border-left-color: var(--danger);
-}
-
-.toast.warning {
-    border-left-color: var(--accent);
-}
-
+/* FIX: ce bloc était dupliqué deux fois dans le fichier d'origine (une version
+   "top/right, z-index:10000" jamais utilisée, puis une version "bottom/center,
+   z-index:999" qui l'écrasait silencieusement en cascade CSS). Conservé
+   uniquement la version réellement utilisée par showToast() dans auth.js
+   (bottom/center), fusionnée avec les variantes success/error/warning.
+   pointer-events: none ajouté par précaution pour garantir que le conteneur
+   ne bloque jamais les clics, même vide ou mal dimensionné. */
 .toast-container {
     position: fixed;
     bottom: 24px;
@@ -341,6 +313,10 @@
     flex-direction: column;
     gap: 8px;
     z-index: 999;
+    pointer-events: none;
+}
+.toast-container > * {
+    pointer-events: auto;
 }
 .toast {
     background: #1e2329;
@@ -353,12 +329,14 @@
     opacity: 0;
     transform: translateY(8px);
     transition: opacity .2s, transform .2s;
+    animation: slideInRight 0.3s ease;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast-success { background: #0ecb81; color: #0b0e11; }
 .toast-error { background: #f6465d; color: #fff; }
-.req-item { color: #848e9c; }
-.req-item.valid { color: #0ecb81; }
+.toast.success { background: #0ecb81; color: #0b0e11; }
+.toast.error { background: #f6465d; color: #fff; }
+.toast.warning { background: var(--accent); }
 
 @keyframes slideInRight {
     from {
