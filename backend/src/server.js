@@ -3,6 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const https = require('https'); // Ajout pour récupérer l'IP
 
 const authRoutes = require('./routes/authRoutes');
 const walletRoutes = require('./routes/walletRoutes');
@@ -56,4 +57,20 @@ const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
     console.log(`ExCrypt API démarrée sur le port ${PORT}`);
+
+    // Récupération automatique de l'IP publique sortante (utile pour la Whitelist SebPay)
+    https.get('https://api.ipify.org?format=json', (resp) => {
+        let data = '';
+        resp.on('data', (chunk) => { data += chunk; });
+        resp.on('end', () => {
+            try {
+                const parsed = JSON.parse(data);
+                console.log(`📍 IP PUBLIQUE DE RENDER: ${parsed.ip}`);
+            } catch (e) {
+                console.log("Impossible de parser l'adresse IP.");
+            }
+        });
+    }).on("error", (err) => {
+        console.log("Erreur lors de la récupération de l'IP: " + err.message);
+    });
 });
