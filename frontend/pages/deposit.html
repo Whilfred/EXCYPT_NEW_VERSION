@@ -1,0 +1,68 @@
+<!-- frontend/pages/deposit.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Déposer - ExCrypt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg: #fafafa; --card: #ffffff; --border: #eaecef; --text: #1e2329; --muted: #707a8a; --accent: #0b0e11; --green: #03a66d; --red: #cf304a; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .app { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background: var(--card); border-right: 1px solid var(--border); padding: 24px 16px; position: fixed; height: 100vh; left: 0; top: 0; }
+        .sidebar-logo { font-size: 19px; font-weight: 700; margin-bottom: 32px; padding: 0 12px; display: flex; align-items: center; gap: 8px; color: var(--accent); }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { padding: 11px 12px; border-radius: 8px; margin-bottom: 2px; cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; }
+        .sidebar-menu li:hover { background: var(--bg); color: var(--text); }
+        .sidebar-menu li.logout { color: var(--red); border-top: 1px solid var(--border); margin-top: 28px; padding-top: 20px; }
+        .main { margin-left: 240px; padding: 28px 32px 100px; flex: 1; max-width: 1200px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .topbar h1 { font-size: 18px; font-weight: 600; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 600px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+        .form-input, .form-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text); outline: none; }
+        .btn-submit { width: 100%; padding: 12px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 10px; }
+        @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; padding: 20px 16px 90px; } }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-logo">ExCrypt</div>
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='dashboard.html'">Tableau de bord</li>
+                <li class="logout" onclick="logout()">Déconnexion</li>
+            </ul>
+        </aside>
+        <main class="main">
+            <div class="topbar">
+                <h1>Déposer des fonds</h1>
+                <div class="user-avatar" id="userAvatar">U</div>
+            </div>
+            <div class="section">
+                <form onsubmit="event.preventDefault(); alert('Demande de dépôt initiée');">
+                    <div class="form-group">
+                        <label class="form-label">Méthode de paiement</label>
+                        <select class="form-select"><option>Mobile Money (FCFA)</option><option>Carte Bancaire</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Montant à déposer</label>
+                        <input type="number" class="form-input" placeholder="Ex: 10000" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Valider le dépôt</button>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (!localStorage.getItem('auth_token') || !user) window.location.href = 'login.html';
+        document.getElementById('userAvatar').textContent = (user.firstName || 'U').charAt(0).toUpperCase();
+        function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+    </script>
+</body>
+</html>

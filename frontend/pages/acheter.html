@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acheter de la crypto - ExCrypt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #fafafa; --card: #ffffff; --border: #eaecef;
+            --text: #1e2329; --muted: #707a8a; --accent: #0b0e11;
+            --green: #03a66d; --input-bg: #fff;
+        }
+        [data-theme="dark"] {
+            --bg: #12161c; --card: #1e2329; --border: #2b313a;
+            --text: #eaecef; --muted: #848e9c; --accent: #fcd535;
+            --input-bg: #12161c;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; display: flex; justify-content: center; align-items: center; }
+        .container { width: 100%; max-width: 520px; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-weight: 500; font-size: 14px; margin-bottom: 16px; }
+        .back-link:hover { color: var(--text); }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-header h2 { font-size: 16px; font-weight: 600; }
+        .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .form-field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+        .input-group { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); overflow: hidden; }
+        .input-group input { flex: 1; padding: 12px 14px; border: none; background: transparent; color: var(--text); font-size: 15px; outline: none; }
+        .input-group select { padding: 12px 14px; border: none; background: var(--bg); color: var(--text); font-size: 14px; font-weight: 600; border-left: 1px solid var(--border); outline: none; cursor: pointer; }
+        .rate-info { font-size: 12px; color: var(--muted); margin-bottom: 16px; display: flex; justify-content: space-between; background: var(--bg); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); }
+        .rate-info span { font-weight: 600; color: var(--text); }
+        .btn-submit { width: 100%; background: var(--accent); color: var(--bg); border: none; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; transition: opacity 0.2s; margin-top: 10px; }
+        .btn-submit:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="./dashboard.html" class="back-link">← Retour au tableau de bord</a>
+        <div class="section">
+            <div class="section-header">
+                <h2>Acheter de la crypto</h2>
+            </div>
+            <div class="rate-info">
+                <span>Taux de vente :</span> 1 Unité = 592 FCFA
+            </div>
+            <form onsubmit="handleBuyAction(event)">
+                <div class="form-field">
+                    <label>1. Vous donnez (FCFA)</label>
+                    <div class="input-group">
+                        <input type="number" id="cfaInput" placeholder="Ex: 59200" oninput="calculateCrypto()" required>
+                        <select style="background:var(--card);"><option>FCFA</option></select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>2. Vous recevez (Crypto)</label>
+                    <div class="input-group">
+                        <input type="number" id="cryptoOutput" placeholder="0.0000" oninput="calculateCFA()" required>
+                        <select id="cryptoSelect">
+                            <option value="USDT">USDT</option>
+                            <option value="BTC">BTC</option>
+                            <option value="ETH">ETH</option>
+                            <option value="BNB">BNB</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>3. Pays de résidence (Afrique de l'Ouest)</label>
+                    <div class="input-group">
+                        <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">
+                            <option value="Burkina Faso">Burkina Faso</option>
+                            <option value="Côte d'Ivoire">Côte d'Ivoire</option>
+                            <option value="Sénégal">Sénégal</option>
+                            <option value="Mali">Mali</option>
+                            <option value="Bénin">Bénin</option>
+                            <option value="Togo">Togo</option>
+                            <option value="Niger">Niger</option>
+                            <option value="Guinée">Guinée</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>4. Réseau de paiement mobile / Local</label>
+                    <div class="input-group">
+                        <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>5. Numéro de téléphone (Mobile Money)</label>
+                    <div class="input-group">
+                        <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Acheter maintenant</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+
+        const paymentNetworks = {
+            "Burkina Faso": ["Orange Money BF", "Moov Africa BF", "Coris Money"],
+            "Côte d'Ivoire": ["MTN Money CI", "Orange Money CI", "Moov Money CI", "Wave CI"],
+            "Sénégal": ["Orange Money SN", "Free Money SN", "Wizall Money", "E-Money"],
+            "Mali": ["Orange Money ML", "Moov Money ML", "Sama Money"],
+            "Bénin": ["MTN Momo BJ", "Moov Money BJ"],
+            "Togo": ["Moov T-Money", "TMoney Togo"],
+            "Niger": ["Airtel Money NE", "Moov Money NE", "Orange Money NE"],
+            "Guinée": ["Orange Money GN", "MTN Money GN"]
+        };
+
+        function updateNetworks() {
+            const countrySelect = document.getElementById('countrySelect');
+            const networkSelect = document.getElementById('networkSelect');
+            if(!countrySelect || !networkSelect) return;
+            const selectedCountry = countrySelect.value;
+            
+            networkSelect.innerHTML = '';
+            if (paymentNetworks[selectedCountry]) {
+                paymentNetworks[selectedCountry].forEach(net => {
+                    const opt = document.createElement('option');
+                    opt.value = net;
+                    opt.textContent = net;
+                    networkSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function calculateCrypto() {
+            const cfaInput = document.getElementById('cfaInput').value;
+            const cryptoOutput = document.getElementById('cryptoOutput');
+            const rate = 592;
+            if (cfaInput && !isNaN(cfaInput)) {
+                cryptoOutput.value = (cfaInput / rate).toFixed(4);
+            } else {
+                cryptoOutput.value = '';
+            }
+        }
+
+        function calculateCFA() {
+            const cryptoInput = document.getElementById('cryptoOutput').value;
+            const cfaInput = document.getElementById('cfaInput');
+            const rate = 592;
+            if (cryptoInput && !isNaN(cryptoInput)) {
+                cfaInput.value = Math.round(cryptoInput * rate);
+            } else {
+                cfaInput.value = '';
+            }
+        }
+
+        function handleBuyAction(event) {
+            event.preventDefault();
+            const phone = document.getElementById('phoneNumber').value;
+            alert(`Achat effectué avec succès ! Un code de confirmation sera envoyé au ${phone}`);
+            window.location.href = 'index.html';
+        }
+
+        updateNetworks();
+    </script>
+</body>
+</html>
