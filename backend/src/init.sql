@@ -1,67 +1,55 @@
-﻿CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NOT NULL,
-  phone_number VARCHAR(50) NOT NULL,
-  role VARCHAR(20) DEFAULT 'USER',
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+﻿CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) DEFAULT '',
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(30),
+    country VARCHAR(100) DEFAULT 'Burkina Faso',
+    password_hash TEXT NOT NULL,
+    kyc_status VARCHAR(20) NOT NULL DEFAULT 'non_verifie'
+        CHECK (kyc_status IN ('non_verifie','en_attente','verifie')),
+    theme VARCHAR(10) NOT NULL DEFAULT 'dark' CHECK (theme IN ('dark','light')),
+    language VARCHAR(5) NOT NULL DEFAULT 'fr',
+    notif_email BOOLEAN NOT NULL DEFAULT TRUE,
+    notif_sms BOOLEAN NOT NULL DEFAULT TRUE,
+    notif_push BOOLEAN NOT NULL DEFAULT FALSE,
+    two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS wallets (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  balance_fcfa DECIMAL(15,2) DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS crypto_assets (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  wallet_id UUID REFERENCES wallets(id) ON DELETE CASCADE,
-  crypto_type VARCHAR(10) NOT NULL,
-  amount DECIMAL(15,8) DEFAULT 0,
-  address VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(wallet_id, crypto_type)
+CREATE TABLE IF NOT EXISTS balances (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    currency VARCHAR(10) NOT NULL CHECK (currency IN ('USDT','BTC','ETH','BNB')),
+    amount NUMERIC(24,8) NOT NULL DEFAULT 0 CHECK (amount >= 0),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, currency)
 );
 
 CREATE TABLE IF NOT EXISTS transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL,
-  status VARCHAR(20) DEFAULT 'PENDING',
-  amount DECIMAL(15,2) NOT NULL,
-  currency VARCHAR(10) NOT NULL,
-  crypto_type VARCHAR(10),
-  amount_crypto DECIMAL(15,8),
-  phone_number VARCHAR(50),
-  rate DECIMAL(15,2),
-  description TEXT,
-  validated_by UUID,
-  validated_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('achat','vente','conversion','depot','retrait')),
+    status VARCHAR(20) NOT NULL DEFAULT 'en_attente'
+        CHECK (status IN ('en_attente','termine','echoue')),
+    crypto VARCHAR(10),
+    crypto_amount NUMERIC(24,8),
+    fcfa_amount NUMERIC(18,2),
+    network VARCHAR(60),
+    phone VARCHAR(30),
+    country VARCHAR(100),
+    from_currency VARCHAR(10),
+    from_amount NUMERIC(24,8),
+    to_currency VARCHAR(10),
+    to_amount NUMERIC(24,8),
+    address VARCHAR(255),
+    tx_id VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS crypto_prices (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  crypto_type VARCHAR(10) UNIQUE NOT NULL,
-  price_fcfa DECIMAL(15,2) NOT NULL,
-  buy_rate DECIMAL(15,2) NOT NULL,
-  sell_rate DECIMAL(15,2) NOT NULL,
-  last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT INTO crypto_prices (crypto_type, price_fcfa, buy_rate, sell_rate) VALUES
-('BTC', 35000000, 34000000, 36000000),
-('ETH', 2500000, 2400000, 2600000),
-('USDT', 600, 580, 620),
-('BNB', 350000, 340000, 360000),
-('XRP', 700, 680, 720),
-('SOL', 35000, 34000, 36000)
-ON CONFLICT (crypto_type) DO NOTHING;
+CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_balances_user ON balances(user_id);
