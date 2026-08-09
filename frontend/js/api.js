@@ -1,5 +1,5 @@
 // js/api.js
-const API_BASE_URL = "https://excypt-new-version-1.onrender.com/api"; // TODO: remplacer par l'URL de prod
+const API_BASE_URL = "https://backend-gnin.onrender.com/api"; // TODO: remplacer par l'URL de prod
 
 const TOKEN_KEY = "excrypt_token";
 const USER_KEY = "excrypt_user";
