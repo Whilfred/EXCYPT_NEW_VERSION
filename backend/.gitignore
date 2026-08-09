@@ -1,0 +1,14 @@
+# Dépendances
+node_modules/
+
+# Fichiers d'environnement et sensibles
+.env
+
+# Logs de debug npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Cache divers
+.DS_Store
