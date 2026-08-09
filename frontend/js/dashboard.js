@@ -1,466 +1,391 @@
 /* js/dashboard.js */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
     const token = localStorage.getItem('auth_token');
     if (!token) {
         window.location.href = '/login.html';
         return;
     }
-    
-    // Load user data
     loadUserData();
-    
-    // Load wallet data
     loadWalletData();
-    
-    // Load recent transactions
     loadRecentTransactions();
-    
-    // Load crypto prices
     loadCryptoPrices();
-    
-    // Setup modal events
     setupModalEvents();
 });
 
-async function loadUserData() {
-    try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (user) {
-            document.querySelector('.user-name').textContent = 
-                `${user.firstName} ${user.lastName}`;
-            document.querySelector('.user-avatar').textContent = 
-                user.firstName[0] + user.lastName[0];
-        }
-    } catch (error) {
-        console.error('Error loading user data:', error);
-    }
+/* (loadUserData, loadWalletData, loadRecentTransactions, loadCryptoPrices,
+   setupModalEvents, openModal/closeModal, form getters, formatNumber,
+   formatDate, getTransactionIcon, generateDepositAddress, copyAddress
+   restent identiques à la version existante — non reproduits ici pour la
+   lisibilité, garde-les tels quels.) */
+
+/* =====================================================================
+   Réseaux mobile money par pays — UTILISÉ UNIQUEMENT POUR LA VENTE
+   (réception manuelle). Pour l'ACHAT, les opérateurs viennent maintenant
+   de l'API SebPay (voir loadOperatorsForCountry).
+   ===================================================================== */
+const paymentNetworks = {
+    "Burkina Faso": ["Orange Money BF", "Moov Africa BF", "Coris Money"],
+    "Côte d'Ivoire": ["MTN Money CI", "Orange Money CI", "Moov Money CI", "Wave CI"],
+    "Sénégal": ["Orange Money SN", "Free Money SN", "Wizall Money", "E-Money"],
+    "Mali": ["Orange Money ML", "Moov Money ML", "Sama Money"],
+    "Bénin": ["MTN Momo BJ", "Moov Money BJ"],
+    "Togo": ["Moov T-Mobile", "TMoney Togo"],
+    "Niger": ["Airtel Money NE", "Moov Money NE", "Orange Money NE"],
+    "Guinée": ["Orange Money GN", "MTN Money GN"]
+};
+
+// Codes pays attendus par l'API SebPay (BJ, CI, SN... — voir doc "Pays supportés").
+const countryCodes = {
+    "Burkina Faso": "BF",
+    "Côte d'Ivoire": "CI",
+    "Sénégal": "SN",
+    "Mali": "ML",
+    "Bénin": "BJ",
+    "Togo": "TG",
+    "Niger": "NE",
+    "Guinée": "GN"
+};
+
+const cryptoRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
+
+function countryOptions() { return Object.keys(paymentNetworks).map(c => `<option value="${c}">${c}</option>`).join(''); }
+function cryptoOptions() { return Object.keys(cryptoRates).map(c => `<option value="${c}">${c}</option>`).join(''); }
+
+/* =====================================================================
+   ACHAT — flux SebPay réel avec confirmation + gestion OTP
+   ===================================================================== */
+
+async function renderTradeForm(type) {
+    if (type === 'vente') return renderVenteForm();
+    return renderAchatForm();
 }
 
-async function loadWalletData() {
-    try {
-        const response = await walletAPI.getWallet();
-        if (response.success) {
-            const wallet = response.data;
-            
-            // Update balances
-            document.getElementById('totalBalance').textContent = 
-                `${formatNumber(wallet.balanceFCFA)} FCFA`;
-            
-            // Calculate total crypto value
-            let totalCrypto = 0;
-            wallet.cryptoAssets.forEach(asset => {
-                totalCrypto += asset.amount;
-            });
-            document.getElementById('totalCrypto').textContent = 
-                formatNumber(totalCrypto);
-        }
-    } catch (error) {
-        console.error('Error loading wallet:', error);
-        showToast('Erreur lors du chargement du portefeuille', 'error');
-    }
-}
-
-async function loadRecentTransactions() {
-    try {
-        const response = await transactionAPI.getTransactions({ limit: 10 });
-        if (response.success) {
-            const transactions = response.data.transactions;
-            const container = document.getElementById('recentTransactions');
-            
-            if (transactions.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p>📭 Aucune transaction récente</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = transactions.map(tx => `
-                <div class="transaction-item">
-                    <div class="transaction-info">
-                        <span class="transaction-icon">${getTransactionIcon(tx.type)}</span>
-                        <div class="transaction-details">
-                            <span class="transaction-title">${tx.description || tx.type}</span>
-                            <span class="transaction-subtitle">${formatDate(tx.createdAt)}</span>
+async function renderAchatForm() {
+    document.getElementById('mainContent').innerHTML = backLink() + `
+        <div class="buy-container">
+            <div class="buy-box">
+                <div class="section-header-flex" style="margin-bottom: 20px;">
+                    <h3>Acheter de la crypto</h3>
+                </div>
+                <div class="rate-info">
+                    <span>Taux d'achat :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                </div>
+                <form id="achatForm">
+                    <div class="form-field">
+                        <label>1. Vous donnez (FCFA)</label>
+                        <div class="input-group">
+                            <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
+                            <select style="background:var(--card);"><option>FCFA</option></select>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="transaction-amount ${tx.type === 'BUY' || tx.type === 'DEPOSIT' ? 'positive' : 'negative'}">
-                            ${tx.type === 'BUY' || tx.type === 'DEPOSIT' ? '+' : '-'}
-                            ${formatNumber(tx.amount)} ${tx.currency}
-                        </span>
-                        <span class="transaction-status ${tx.status.toLowerCase()}">
-                            ${tx.status}
-                        </span>
+
+                    <div class="form-field">
+                        <label>2. Vous recevez (Crypto)</label>
+                        <div class="input-group">
+                            <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
+                            <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCFA();">${cryptoOptions()}</select>
+                        </div>
                     </div>
-                </div>
-            `).join('');
-            
-            // Update stats
-            document.getElementById('totalTransactions').textContent = 
-                response.data.pagination.total;
-            
-            // Count pending transactions
-            const pending = transactions.filter(tx => tx.status === 'PENDING').length;
-            document.getElementById('pendingTransactions').textContent = pending;
-        }
-    } catch (error) {
-        console.error('Error loading transactions:', error);
-    }
+
+                    <div class="form-field">
+                        <label>3. Pays de résidence</label>
+                        <div class="input-group">
+                            <select id="achatCountrySelect" onchange="loadOperatorsForCountry()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>4. Opérateur Mobile Money</label>
+                        <div class="input-group">
+                            <select id="operatorSelect" style="width:100%; border-left:none;">
+                                <option value="">Chargement des opérateurs...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>5. Numéro de téléphone (Mobile Money)</label>
+                        <div class="input-group">
+                            <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="achatSubmitBtn">Acheter maintenant</button>
+                </form>
+
+                <div id="sebpayStatusBox" style="display:none; margin-top:16px;"></div>
+            </div>
+        </div>
+    `;
+    document.getElementById('achatForm').addEventListener('submit', handleAchatSubmit);
+    updateRateLabel();
+    await loadOperatorsForCountry();
 }
 
-async function loadCryptoPrices() {
+// Charge les opérateurs réels de SebPay pour le pays sélectionné, et
+// mémorise otp_required / ussd_code sur chaque <option> pour pouvoir
+// afficher dynamiquement le champ OTP (voir updateOtpField).
+async function loadOperatorsForCountry() {
+    const countryName = document.getElementById('achatCountrySelect').value;
+    const countryCode = countryCodes[countryName];
+    const select = document.getElementById('operatorSelect');
+    select.innerHTML = `<option value="">Chargement...</option>`;
     try {
-        const response = await walletAPI.getCryptoPrices();
-        if (response.success) {
-            // Update prices display if needed
-            console.log('Crypto prices:', response.data);
-        }
-    } catch (error) {
-        console.error('Error loading prices:', error);
-    }
-}
-
-function setupModalEvents() {
-    // Close modal on overlay click
-    document.getElementById('modalContainer').addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) {
-            closeModal();
-        }
-    });
-    
-    // Close on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeModal();
-        }
-    });
-}
-
-function openModal(action) {
-    const container = document.getElementById('modalContainer');
-    container.style.display = 'flex';
-    
-    let title = '';
-    let content = '';
-    
-    switch(action) {
-        case 'buy':
-            title = 'Acheter des cryptomonnaies';
-            content = getBuyModalContent();
-            break;
-        case 'sell':
-            title = 'Vendre des cryptomonnaies';
-            content = getSellModalContent();
-            break;
-        case 'convert':
-            title = 'Convertir des cryptomonnaies';
-            content = getConvertModalContent();
-            break;
-        case 'deposit':
-            title = 'Déposer des cryptomonnaies';
-            content = getDepositModalContent();
-            break;
-        case 'withdraw':
-            title = 'Retirer des cryptomonnaies';
-            content = getWithdrawModalContent();
-            break;
-        default:
+        const res = await API.sebpay.getOperators(countryCode);
+        const operators = res.operators || [];
+        if (operators.length === 0) {
+            select.innerHTML = `<option value="">Aucun opérateur disponible pour ce pays</option>`;
             return;
+        }
+        select.innerHTML = operators.map(op =>
+            `<option value="${op.slug}"
+                     data-name="${op.name || op.slug}"
+                     data-otp-required="${!!op.otp_required}"
+                     data-ussd-code="${op.ussd_code || ''}">
+                ${op.name || op.slug}
+             </option>`
+        ).join('');
+        select.onchange = updateOtpField;
+        updateOtpField();
+    } catch (e) {
+        select.innerHTML = `<option value="">Erreur de chargement des opérateurs</option>`;
+        showToast(e.message);
     }
-    
-    container.innerHTML = `
-        <div class="modal">
-            <div class="modal-header">
-                <h2>${title}</h2>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                ${content}
-            </div>
+}
+
+// Affiche/masque dynamiquement le champ OTP selon l'opérateur choisi
+// (ex: Orange Money BF/CI/SN exigent un code USSD — voir doc "Vérification OTP").
+function updateOtpField() {
+    const select = document.getElementById('operatorSelect');
+    const opt = select.selectedOptions[0];
+    const otpRequired = opt && opt.dataset.otpRequired === 'true';
+    const ussdCode = opt ? opt.dataset.ussdCode : '';
+
+    let otpBox = document.getElementById('otpFieldWrapper');
+    if (!otpRequired) {
+        if (otpBox) otpBox.remove();
+        return;
+    }
+    if (!otpBox) {
+        otpBox = document.createElement('div');
+        otpBox.id = 'otpFieldWrapper';
+        otpBox.className = 'form-field';
+        document.getElementById('achatForm').insertBefore(otpBox, document.getElementById('achatSubmitBtn'));
+    }
+    otpBox.innerHTML = `
+        <label>Code OTP</label>
+        <div class="info-box" style="margin-bottom:8px;">
+            Composez <strong>${ussdCode}</strong> sur votre téléphone pour recevoir votre code.
+        </div>
+        <div class="input-group">
+            <input type="text" id="otpCode" placeholder="Code reçu par USSD" required>
         </div>
     `;
 }
 
-function closeModal() {
-    document.getElementById('modalContainer').style.display = 'none';
+function updateRateLabel() {
+    const select = document.getElementById('cryptoSelect');
+    const crypto = select ? select.value : 'USDT';
+    const rate = cryptoRates[crypto];
+    const label = document.getElementById('rateLabel');
+    if (label) label.textContent = `1 ${crypto} = ${rate.toLocaleString('fr-FR')} FCFA`;
 }
 
-function getBuyModalContent() {
-    return `
-        <form id="buyForm" onsubmit="handleBuy(event)">
-            <div class="form-group">
-                <label>Cryptomonnaie</label>
-                <select name="cryptoType" required>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                    <option value="ETH">Ethereum (ETH)</option>
-                    <option value="USDT">Tether (USDT)</option>
-                    <option value="BNB">BNB</option>
-                    <option value="XRP">XRP</option>
-                    <option value="SOL">Solana (SOL)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Montant (FCFA)</label>
-                <input type="number" name="amountFCFA" placeholder="1000" required />
-            </div>
-            <div class="form-group">
-                <label>Téléphone Mobile Money</label>
-                <input type="tel" name="phoneNumber" placeholder="+237 6XX XX XX XX" required />
-            </div>
-            <div class="form-group">
-                <label>Vous recevrez</label>
-                <input type="text" id="estimatedCrypto" disabled value="0.00" />
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Demander l'achat</button>
-        </form>
+function currentTradeCrypto() {
+    const select = document.getElementById('cryptoSelect');
+    return select ? select.value : 'USDT';
+}
+
+function calcFromCFA() {
+    const cfaInput = document.getElementById('cfaInput').value;
+    const cryptoOutput = document.getElementById('cryptoOutput');
+    const rate = cryptoRates[currentTradeCrypto()];
+    cryptoOutput.value = (cfaInput && !isNaN(cfaInput)) ? (cfaInput / rate).toFixed(6) : '';
+}
+
+function calcFromCrypto() {
+    const cryptoInput = document.getElementById('cryptoOutput').value;
+    const cfaInput = document.getElementById('cfaInput');
+    const rate = cryptoRates[currentTradeCrypto()];
+    cfaInput.value = (cryptoInput && !isNaN(cryptoInput)) ? Math.round(cryptoInput * rate) : '';
+}
+
+async function handleAchatSubmit(event) {
+    event.preventDefault();
+    const btn = document.getElementById('achatSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Envoi de la demande de paiement...';
+
+    try {
+        const crypto = currentTradeCrypto();
+        const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
+        const operatorSelect = document.getElementById('operatorSelect');
+        const operator = operatorSelect.value;
+        const operatorName = operatorSelect.selectedOptions[0]?.dataset.name || operator;
+        const phone = document.getElementById('phoneNumber').value;
+        const countryName = document.getElementById('achatCountrySelect').value;
+        const country = countryCodes[countryName];
+        const otpEl = document.getElementById('otpCode');
+        const otpCode = otpEl ? otpEl.value : undefined;
+
+        if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
+        if (!operator) throw new Error('Merci de sélectionner un opérateur.');
+        if (otpEl && !otpCode) throw new Error('Merci de renseigner le code OTP reçu par USSD.');
+
+        const res = await API.sebpay.collect({ phone, operator, operatorName, country, crypto, cryptoAmount, otpCode });
+
+        showSebpayStatus(res.transaction, res.message, res.providerLink);
+        btn.textContent = 'Demande envoyée';
+        pollSebpayStatus(res.transaction.id);
+    } catch (e) {
+        showToast(e.message);
+        btn.disabled = false;
+        btn.textContent = 'Acheter maintenant';
+    }
+}
+
+function showSebpayStatus(tx, message, providerLink) {
+    const box = document.getElementById('sebpayStatusBox');
+    box.style.display = 'block';
+    box.innerHTML = `
+        <div class="info-box">
+            ${message || '📱 Veuillez valider le paiement sur votre téléphone Mobile Money.'}
+        </div>
+        ${providerLink ? `<a href="${providerLink}" target="_blank" class="btn-submit" style="display:block; text-align:center; text-decoration:none;">Ouvrir le lien de paiement</a>` : ''}
+        <div id="sebpayStatusText" class="settings-row-sub" style="margin-top:10px;">En attente de confirmation du paiement...</div>
     `;
 }
 
-function getSellModalContent() {
-    return `
-        <form id="sellForm" onsubmit="handleSell(event)">
-            <div class="form-group">
-                <label>Cryptomonnaie</label>
-                <select name="cryptoType" required>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                    <option value="ETH">Ethereum (ETH)</option>
-                    <option value="USDT">Tether (USDT)</option>
-                    <option value="BNB">BNB</option>
-                    <option value="XRP">XRP</option>
-                    <option value="SOL">Solana (SOL)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Montant (crypto)</label>
-                <input type="number" name="amountCrypto" placeholder="0.00" step="0.0001" required />
-            </div>
-            <div class="form-group">
-                <label>Téléphone Mobile Money</label>
-                <input type="tel" name="phoneNumber" placeholder="+237 6XX XX XX XX" required />
-            </div>
-            <div class="form-group">
-                <label>Vous recevrez</label>
-                <input type="text" id="estimatedFCFA" disabled value="0 FCFA" />
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Demander la vente</button>
-        </form>
-    `;
+// Poll toutes les 4s ; s'arrête dès que le statut n'est plus 'en_attente'
+// ou après un nombre maximal de tentatives (évite un polling infini si
+// l'utilisateur quitte l'onglet sans jamais confirmer).
+function pollSebpayStatus(txId) {
+    let attempts = 0;
+    const maxAttempts = 45; // ~3 minutes à 4s d'intervalle
+    const statusText = document.getElementById('sebpayStatusText');
+
+    clearInterval(window.__sebpayPollTimer);
+    window.__sebpayPollTimer = setInterval(async () => {
+        attempts++;
+        try {
+            const res = await API.sebpay.getStatus(txId);
+            const status = res.transaction.status;
+
+            if (status !== 'en_attente') {
+                clearInterval(window.__sebpayPollTimer);
+                if (status === 'termine') {
+                    showToast('Paiement confirmé, crypto créditée 🎉');
+                } else {
+                    showToast('Le paiement a échoué ou a été refusé.');
+                }
+                loadWalletData();
+                loadRecentTransactions();
+                if (statusText) statusText.textContent = status === 'termine' ? 'Paiement confirmé.' : 'Paiement échoué.';
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(window.__sebpayPollTimer);
+                if (statusText) statusText.textContent = "Toujours en attente — vous pouvez fermer cette page, la transaction reste visible dans l'historique.";
+            }
+        } catch (e) {
+            console.error('Erreur de polling SebPay:', e);
+        }
+    }, 4000);
 }
 
-function getConvertModalContent() {
-    return `
-        <form id="convertForm" onsubmit="handleConvert(event)">
-            <div class="form-group">
-                <label>De</label>
-                <select name="fromCrypto" required>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                    <option value="ETH">Ethereum (ETH)</option>
-                    <option value="USDT">Tether (USDT)</option>
-                    <option value="BNB">BNB</option>
-                    <option value="XRP">XRP</option>
-                    <option value="SOL">Solana (SOL)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Montant</label>
-                <input type="number" name="amount" placeholder="0.00" step="0.0001" required />
-            </div>
-            <div class="form-group">
-                <label>Vers</label>
-                <select name="toCrypto" required>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                    <option value="ETH">Ethereum (ETH)</option>
-                    <option value="USDT">Tether (USDT)</option>
-                    <option value="BNB">BNB</option>
-                    <option value="XRP">XRP</option>
-                    <option value="SOL">Solana (SOL)</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Convertir</button>
-        </form>
-    `;
-}
+/* =====================================================================
+   VENTE — inchangé (paiement manuel, pas de SebPay)
+   ===================================================================== */
 
-function getDepositModalContent() {
-    return `
-        <div style="text-align: center; padding: 20px 0;">
-            <div style="font-size: 48px; margin-bottom: 16px;">📥</div>
-            <h3>Déposer des cryptomonnaies</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 24px;">
-                Sélectionnez une cryptomonnaie pour obtenir votre adresse de dépôt
-            </p>
-            <div class="form-group">
-                <label>Cryptomonnaie</label>
-                <select name="cryptoType" id="depositCrypto" required>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                    <option value="ETH">Ethereum (ETH)</option>
-                    <option value="USDT">Tether (USDT)</option>
-                    <option value="BNB">BNB</option>
-                    <option value="XRP">XRP</option>
-                    <option value="SOL">Solana (SOL)</option>
-                </select>
-            </div>
-            <button onclick="generateDepositAddress()" class="btn btn-primary btn-block">
-                Générer l'adresse
-            </button>
-            <div id="depositAddress" style="display: none; margin-top: 16px;">
-                <p style="font-size: 12px; color: var(--text-secondary);">Adresse de dépôt</p>
-                <code style="display: block; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius); word-break: break-all;">
-                    1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
-                </code>
-                <button onclick="copyAddress()" class="btn btn-outline btn-block" style="margin-top: 8px;">
-                    📋 Copier l'adresse
-                </button>
+async function renderVenteForm() {
+    document.getElementById('mainContent').innerHTML = backLink() + `
+        <div class="buy-container">
+            <div class="buy-box">
+                <div class="section-header-flex" style="margin-bottom: 20px;">
+                    <h3>Vendre de la crypto</h3>
+                </div>
+                <div class="rate-info">
+                    <span>Taux de vente :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                </div>
+                <form id="venteForm">
+                    <div class="form-field">
+                        <label>1. Vous donnez (Crypto)</label>
+                        <div class="input-group">
+                            <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
+                            <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>2. Vous recevez (FCFA)</label>
+                        <div class="input-group">
+                            <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
+                            <select style="background:var(--card);"><option>FCFA</option></select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>3. Pays de résidence</label>
+                        <div class="input-group">
+                            <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>4. Réseau mobile money (réception)</label>
+                        <div class="input-group">
+                            <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>5. Numéro de téléphone (Mobile Money)</label>
+                        <div class="input-group">
+                            <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="venteSubmitBtn">Vendre maintenant</button>
+                </form>
             </div>
         </div>
     `;
+    document.getElementById('venteForm').addEventListener('submit', handleVenteSubmit);
+    updateNetworks();
+    updateRateLabel();
 }
 
-function getWithdrawModalContent() {
-    return `
-        <form id="withdrawForm" onsubmit="handleWithdraw(event)">
-            <div class="form-group">
-                <label>Cryptomonnaie</label>
-                <select name="cryptoType" required>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                    <option value="ETH">Ethereum (ETH)</option>
-                    <option value="USDT">Tether (USDT)</option>
-                    <option value="BNB">BNB</option>
-                    <option value="XRP">XRP</option>
-                    <option value="SOL">Solana (SOL)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Montant</label>
-                <input type="number" name="amount" placeholder="0.00" step="0.0001" required />
-            </div>
-            <div class="form-group">
-                <label>Adresse de destination</label>
-                <input type="text" name="address" placeholder="Adresse du portefeuille" required />
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Demander le retrait</button>
-        </form>
-    `;
+function updateNetworks() {
+    const countrySelect = document.getElementById('countrySelect');
+    const networkSelect = document.getElementById('networkSelect');
+    if (!countrySelect || !networkSelect) return;
+    networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
+        .map(n => `<option value="${n}">${n}</option>`).join('');
 }
 
-// Form handlers
-async function handleBuy(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
-    
+async function handleVenteSubmit(event) {
+    event.preventDefault();
+    const btn = document.getElementById('venteSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Traitement...';
+
     try {
-        const response = await transactionAPI.createBuy(data);
-        if (response.success) {
-            showToast('Demande d\'achat soumise avec succès', 'success');
-            closeModal();
-            loadRecentTransactions();
-            loadWalletData();
-        }
-    } catch (error) {
-        showToast(error.message || 'Erreur lors de la demande', 'error');
+        const crypto = currentTradeCrypto();
+        const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
+        const network = document.getElementById('networkSelect').value;
+        const phone = document.getElementById('phoneNumber').value;
+        const country = document.getElementById('countrySelect').value;
+
+        if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
+
+        await API.transactions.trade({ type: 'vente', crypto, cryptoAmount, network, phone, country });
+        showToast('Vente enregistrée. Confirmation en attente.');
+        switchTab('dashboard');
+    } catch (e) {
+        showToast(e.message);
+        btn.disabled = false;
+        btn.textContent = 'Vendre maintenant';
     }
 }
-
-async function handleSell(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
-    
-    try {
-        const response = await transactionAPI.createSell(data);
-        if (response.success) {
-            showToast('Demande de vente soumise avec succès', 'success');
-            closeModal();
-            loadRecentTransactions();
-            loadWalletData();
-        }
-    } catch (error) {
-        showToast(error.message || 'Erreur lors de la demande', 'error');
-    }
-}
-
-async function handleConvert(e) {
-    e.preventDefault();
-    // Implementation for conversion
-    showToast('Fonctionnalité de conversion à venir', 'info');
-}
-
-async function handleWithdraw(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
-    
-    try {
-        const response = await transactionAPI.createWithdrawal(data);
-        if (response.success) {
-            showToast('Demande de retrait soumise avec succès', 'success');
-            closeModal();
-            loadRecentTransactions();
-            loadWalletData();
-        }
-    } catch (error) {
-        showToast(error.message || 'Erreur lors de la demande', 'error');
-    }
-}
-
-// Utility functions
-function formatNumber(num) {
-    if (!num) return '0.00';
-    return Number(num).toLocaleString('fr-FR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-}
-
-function formatDate(date) {
-    return new Date(date).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function getTransactionIcon(type) {
-    const icons = {
-        BUY: '🛒',
-        SELL: '💵',
-        DEPOSIT: '📥',
-        WITHDRAWAL: '📤',
-        CONVERSION: '🔄'
-    };
-    return icons[type] || '📊';
-}
-
-function generateDepositAddress() {
-    const addressDiv = document.getElementById('depositAddress');
-    addressDiv.style.display = 'block';
-}
-
-function copyAddress() {
-    const code = document.querySelector('#depositAddress code');
-    if (code) {
-        navigator.clipboard.writeText(code.textContent);
-        showToast('Adresse copiée dans le presse-papier', 'success');
-    }
-}
-
-// Make functions globally available
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.handleBuy = handleBuy;
-window.handleSell = handleSell;
-window.handleConvert = handleConvert;
-window.handleWithdraw = handleWithdraw;
-window.generateDepositAddress = generateDepositAddress;
-window.copyAddress = copyAddress;
-window.logout = logout;

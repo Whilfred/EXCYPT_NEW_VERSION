@@ -85,5 +85,19 @@ const API = {
         get() { return apiRequest("/settings"); },
         update(payload) { return apiRequest("/settings", { method: "PATCH", body: JSON.stringify(payload) }); },
         changePassword(payload) { return apiRequest("/settings/change-password", { method: "POST", body: JSON.stringify(payload) }); }
+    },
+    sebpay: {
+        getOperators(country) {
+            return apiRequest(`/payments/sebpay/operators?country=${encodeURIComponent(country)}`);
+        },
+        collect(payload) {
+            return apiRequest("/payments/sebpay/collect", { method: "POST", body: JSON.stringify(payload) });
+        },
+        getStatus(id) {
+            return apiRequest(`/payments/sebpay/collections/${id}`);
+        },
+        sync(id) {
+            return apiRequest(`/payments/sebpay/collections/${id}/sync`, { method: "POST" });
+        }
     }
 };

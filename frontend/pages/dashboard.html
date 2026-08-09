@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿<!-- dashboard.html -->
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -28,7 +29,6 @@
 
         .app { display: flex; min-height: 100vh; }
 
-        /* SIDEBAR (PC) */
         .sidebar { width: 240px; background: var(--card); border-right: 1px solid var(--border); padding: 24px 16px; position: fixed; height: 100vh; left: 0; top: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 100; }
         .sidebar-top { display: flex; flex-direction: column; }
         .sidebar-logo { font-size: 19px; font-weight: 700; margin-bottom: 32px; padding: 0 12px; display: flex; align-items: center; gap: 8px; color: var(--text); }
@@ -39,10 +39,8 @@
         .sidebar-menu li.logout { color: var(--red); margin-top: 10px; border-top: 1px solid var(--border); padding-top: 20px; }
         .sidebar-menu li.logout:hover { background: rgba(207, 48, 74, 0.1); }
 
-        /* CONTENU PRINCIPAL */
         .main { margin-left: 240px; padding: 28px 32px 100px; flex: 1; max-width: 1200px; }
 
-        /* TOPBAR INTERNE */
         .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
         .topbar h1 { font-size: 22px; font-weight: 700; }
         .topbar-actions { display: flex; align-items: center; gap: 12px; }
@@ -50,21 +48,18 @@
         .icon-btn .dot { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); border: 2px solid var(--card); }
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; }
 
-        /* GRILLES ET CARTES DASHBOARD */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
         .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
         .stat-header { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 500; }
         .stat-value { font-size: 22px; font-weight: 700; }
         .stat-sub { font-size: 12px; color: var(--green); font-weight: 600; }
 
-        /* ACTIONS GRID */
         .actions-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
         .action-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
         .action-card:hover { border-color: var(--text); transform: translateY(-2px); }
         .action-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text); }
         .action-card span { font-size: 13px; font-weight: 600; }
 
-        /* TRANSACTIONS SECTION */
         .card-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
         .section-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .section-header-flex h3 { font-size: 16px; font-weight: 600; }
@@ -76,7 +71,6 @@
         .empty-transactions p { font-size: 14px; font-weight: 500; }
         .empty-transactions span { font-size: 12px; }
 
-        /* SECTION FORMULAIRE (ACHAT / VENTE / CONVERSION / DEPOT / RETRAIT) */
         .buy-container { display: flex; justify-content: center; width: 100%; }
         .buy-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 100%; max-width: 520px; }
         .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
@@ -106,7 +100,6 @@
         .warning-box { font-size: 12px; color: var(--red); background: rgba(207, 48, 74, 0.08); border: 1px solid rgba(207, 48, 74, 0.25); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5; }
         .info-box { font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5; }
 
-        /* PORTEFEUILLE */
         .wallet-total { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
         .wallet-total .label { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
         .wallet-total .value { font-size: 30px; font-weight: 700; }
@@ -121,18 +114,15 @@
         .mini-btn { flex: 1; text-align: center; padding: 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; }
         .mini-btn:hover { border-color: var(--text); }
 
-        /* BADGES DE STATUT */
         .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 100px; font-size: 11px; font-weight: 700; }
         .badge-done { color: var(--green); background: rgba(3, 166, 109, 0.12); }
         .badge-pending { color: var(--amber); background: rgba(212, 160, 23, 0.14); }
         .badge-failed { color: var(--red); background: rgba(207, 48, 74, 0.12); }
 
-        /* CHIPS DE FILTRE */
         .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
         .chip { padding: 7px 14px; border-radius: 100px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; }
         .chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-        /* LISTE DE TRANSACTIONS */
         .tx-list { display: flex; flex-direction: column; gap: 10px; }
         .tx-item { display: flex; align-items: center; justify-content: space-between; padding: 14px; border: 1px solid var(--border); border-radius: 10px; gap: 12px; flex-wrap: wrap; }
         .tx-left { display: flex; align-items: center; gap: 12px; }
@@ -145,7 +135,6 @@
         .tx-actions button { font-size: 11px; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-weight: 600; }
         .tx-actions button:hover { border-color: var(--text); }
 
-        /* PROFIL */
         .profile-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
         .profile-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; }
         .profile-name { font-size: 18px; font-weight: 700; }
@@ -153,7 +142,6 @@
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 560px) { .form-row-2 { grid-template-columns: 1fr; } }
 
-        /* PARAMETRES */
         .settings-block { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
         .settings-block h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
         .settings-block .desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
@@ -178,7 +166,6 @@
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
-        /* NAVIGATION MOBILE (BAS) */
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); padding: 8px 4px; z-index: 100; }
         .bottom-nav ul { list-style: none; display: flex; justify-content: space-around; }
         .bottom-nav li { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); font-size: 11px; cursor: pointer; padding: 4px 8px; }
@@ -194,15 +181,11 @@
         }
     </style>
 
-    <!-- Couche API partagée avec les pages login/register (voir js/api.js) -->
-    <!-- FIX: chemin corrigé, dashboard.html est dans /pages/, il faut donc remonter d'un niveau avec ../ -->
     <script src="../js/api.js"></script>
-    <!-- Redirige vers la connexion si aucun token n'est présent -->
     <script src="../js/auth-guard.js"></script>
 </head>
 <body>
     <div class="app">
-        <!-- SIDEBAR FIXE (PC) -->
         <aside class="sidebar">
             <div class="sidebar-top">
                 <div class="sidebar-logo">
@@ -240,13 +223,11 @@
             </ul>
         </aside>
 
-        <!-- CONTENU PRINCIPAL (QUI CHANGE DYNAMIQUEMENT) -->
         <main class="main" id="mainContent">
             <div class="card-section" style="text-align:center; padding:60px 20px; color:var(--muted);">Chargement...</div>
         </main>
     </div>
 
-    <!-- NAVIGATION MOBILE (BAS) -->
     <nav class="bottom-nav">
         <ul>
             <li class="active" onclick="switchTab('dashboard')">
@@ -272,12 +253,15 @@
 
     <script>
     /* =====================================================================
-       Ce fichier consomme désormais le vrai backend via l'objet global
-       `API` défini dans js/api.js (auth, wallet, transactions, profile,
-       settings). Il n'y a plus aucune donnée simulée en localStorage ici.
+       Ce fichier consomme le vrai backend via l'objet global `API` défini
+       dans js/api.js. C'est le SEUL script qui pilote cette page — il n'y a
+       pas de <script src="../js/dashboard.js">, donc ce fichier séparé n'a
+       aucun effet, ne le modifie plus.
        ===================================================================== */
 
-    /* Réseaux mobile money par pays (Afrique de l'Ouest) — données statiques côté frontend */
+    /* Réseaux mobile money par pays — UTILISÉ UNIQUEMENT POUR LA VENTE
+       (réception manuelle). Pour l'ACHAT, les opérateurs viennent
+       maintenant de l'API SebPay (voir loadOperatorsForCountry). */
     const paymentNetworks = {
         "Burkina Faso": ["Orange Money BF", "Moov Africa BF", "Coris Money"],
         "Côte d'Ivoire": ["MTN Money CI", "Orange Money CI", "Moov Money CI", "Wave CI"],
@@ -287,6 +271,18 @@
         "Togo": ["Moov T-Mobile", "TMoney Togo"],
         "Niger": ["Airtel Money NE", "Moov Money NE", "Orange Money NE"],
         "Guinée": ["Orange Money GN", "MTN Money GN"]
+    };
+
+    /* Codes pays attendus par l'API SebPay (voir doc "Pays supportés") */
+    const countryCodes = {
+        "Burkina Faso": "BF",
+        "Côte d'Ivoire": "CI",
+        "Sénégal": "SN",
+        "Mali": "ML",
+        "Bénin": "BJ",
+        "Togo": "TG",
+        "Niger": "NE",
+        "Guinée": "GN"
     };
 
     /* Taux par défaut (avant le premier chargement) — synchronisés avec ceux
@@ -301,8 +297,6 @@
         BNB: ["BEP20 (BNB Smart Chain)"]
     };
 
-    /* TODO BACKEND : remplacer par une adresse de dépôt unique par utilisateur,
-       générée côté serveur (endpoint GET /api/wallet/deposit-address?crypto=&network=) */
     const depositAddresses = {
         "USDT|TRC20 (Tron)": "TQn9Y2khD5f8mE3z1XwWq7v6b4Rk8sFAKE1",
         "USDT|ERC20 (Ethereum)": "0x8f3a2C1dE4b7A9f0C6d5E2b1A9f0C6d5FAKE2",
@@ -315,11 +309,6 @@
     const TX_LABELS = { achat: "Achat", vente: "Vente", conversion: "Conversion", depot: "Dépôt", retrait: "Retrait" };
     const STATUS_LABELS = { termine: "Terminé", en_attente: "En attente", echoue: "Échoué" };
     const STATUS_BADGE = { termine: "badge-done", en_attente: "badge-pending", echoue: "badge-failed" };
-
-    /* =====================================================================
-       ADAPTATEURS — le backend renvoie du snake_case (colonnes SQL) ;
-       ces fonctions convertissent vers le format utilisé par l'UI.
-       ===================================================================== */
 
     function normalizeTx(tx) {
         return {
@@ -358,10 +347,6 @@
         Object.keys(rates).forEach(c => { if (cryptoRates[c] !== undefined) cryptoRates[c] = rates[c]; });
     }
 
-    /* =====================================================================
-       UTILITAIRES UI
-       ===================================================================== */
-
     function showToast(msg) {
         const toast = document.getElementById("toast");
         toast.textContent = msg;
@@ -394,8 +379,6 @@
         return icons[type] || icons.conversion;
     }
 
-    /* Gestion centralisée des erreurs API : si la session a expiré,
-       apiRequest() a déjà vidé le token — on renvoie alors vers la connexion. */
     function handleApiError(err, container) {
         console.error(err);
         showToast(err.message || 'Erreur réseau');
@@ -423,8 +406,8 @@
 
         try {
             if (tabName === 'dashboard') { setActiveMenus('dashboard'); await renderDashboard(); }
-            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderTradeForm('achat'); }
-            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderTradeForm('vente'); }
+            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderAchatForm(); }
+            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderVenteForm(); }
             else if (tabName === 'convertir') { setActiveMenus('dashboard'); await renderConvert(); }
             else if (tabName === 'deposer') { setActiveMenus('dashboard'); await renderDeposit(presetCrypto); }
             else if (tabName === 'retirer') { setActiveMenus('dashboard'); await renderWithdraw(presetCrypto); }
@@ -641,52 +624,49 @@
     }
 
     /* =====================================================================
-       ACHAT / VENTE
+       ACHAT — flux SebPay réel, avec confirmation et gestion OTP
        ===================================================================== */
 
-    async function renderTradeForm(type) {
-        const isAchat = type === 'achat';
+    async function renderAchatForm() {
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
                     <div class="section-header-flex" style="margin-bottom: 20px;">
-                        <h3>${isAchat ? 'Acheter de la crypto' : 'Vendre de la crypto'}</h3>
+                        <h3>Acheter de la crypto</h3>
                     </div>
                     <div class="rate-info">
-                        <span>Taux ${isAchat ? "d'achat" : "de vente"} :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                        <span>Taux d'achat :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
                     </div>
-                    <form id="tradeForm">
+                    <form id="achatForm">
                         <div class="form-field">
-                            <label>1. ${isAchat ? 'Vous donnez (FCFA)' : 'Vous donnez (Crypto)'}</label>
+                            <label>1. Vous donnez (FCFA)</label>
                             <div class="input-group">
-                                ${isAchat
-                                    ? `<input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required><select style="background:var(--card);"><option>FCFA</option></select>`
-                                    : `<input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required><select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>`
-                                }
+                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
+                                <select style="background:var(--card);"><option>FCFA</option></select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>2. ${isAchat ? 'Vous recevez (Crypto)' : 'Vous recevez (FCFA)'}</label>
+                            <label>2. Vous recevez (Crypto)</label>
                             <div class="input-group">
-                                ${isAchat
-                                    ? `<input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required><select id="cryptoSelect" onchange="updateRateLabel(); calcFromCFA();">${cryptoOptions()}</select>`
-                                    : `<input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required><select style="background:var(--card);"><option>FCFA</option></select>`
-                                }
+                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
+                                <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCFA();">${cryptoOptions()}</select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>3. Pays de résidence (Afrique de l'Ouest)</label>
+                            <label>3. Pays de résidence</label>
                             <div class="input-group">
-                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                                <select id="achatCountrySelect" onchange="loadOperatorsForCountry()" style="width:100%; border-left:none;">${countryOptions()}</select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>4. Réseau mobile money ${isAchat ? '(paiement)' : '(réception)'}</label>
+                            <label>4. Opérateur Mobile Money</label>
                             <div class="input-group">
-                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                                <select id="operatorSelect" style="width:100%; border-left:none;">
+                                    <option value="">Chargement des opérateurs...</option>
+                                </select>
                             </div>
                         </div>
 
@@ -697,22 +677,74 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-submit" id="tradeSubmitBtn">${isAchat ? 'Acheter maintenant' : 'Vendre maintenant'}</button>
+                        <button type="submit" class="btn-submit" id="achatSubmitBtn">Acheter maintenant</button>
                     </form>
+
+                    <div id="sebpayStatusBox" style="display:none; margin-top:16px;"></div>
                 </div>
             </div>
         `;
-        document.getElementById('tradeForm').addEventListener('submit', (e) => handleTradeSubmit(e, type));
-        updateNetworks();
+        document.getElementById('achatForm').addEventListener('submit', handleAchatSubmit);
         updateRateLabel();
+        await loadOperatorsForCountry();
     }
 
-    function updateNetworks() {
-        const countrySelect = document.getElementById('countrySelect');
-        const networkSelect = document.getElementById('networkSelect');
-        if (!countrySelect || !networkSelect) return;
-        networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
-            .map(n => `<option value="${n}">${n}</option>`).join('');
+    // Charge les opérateurs réels de SebPay pour le pays sélectionné, et
+    // mémorise otp_required / ussd_code sur chaque <option> (voir doc "Vérification OTP").
+    async function loadOperatorsForCountry() {
+        const countryName = document.getElementById('achatCountrySelect').value;
+        const countryCode = countryCodes[countryName];
+        const select = document.getElementById('operatorSelect');
+        select.innerHTML = `<option value="">Chargement...</option>`;
+        try {
+            const res = await API.sebpay.getOperators(countryCode);
+            const operators = res.operators || [];
+            if (operators.length === 0) {
+                select.innerHTML = `<option value="">Aucun opérateur disponible pour ce pays</option>`;
+                return;
+            }
+            select.innerHTML = operators.map(op =>
+                `<option value="${op.slug}"
+                         data-name="${op.name || op.slug}"
+                         data-otp-required="${!!op.otp_required}"
+                         data-ussd-code="${op.ussd_code || ''}">
+                    ${op.name || op.slug}
+                 </option>`
+            ).join('');
+            select.onchange = updateOtpField;
+            updateOtpField();
+        } catch (e) {
+            select.innerHTML = `<option value="">Erreur de chargement des opérateurs</option>`;
+            showToast(e.message);
+        }
+    }
+
+    function updateOtpField() {
+        const select = document.getElementById('operatorSelect');
+        const opt = select.selectedOptions[0];
+        const otpRequired = opt && opt.dataset.otpRequired === 'true';
+        const ussdCode = opt ? opt.dataset.ussdCode : '';
+
+        let otpBox = document.getElementById('otpFieldWrapper');
+        if (!otpRequired) {
+            if (otpBox) otpBox.remove();
+            return;
+        }
+        if (!otpBox) {
+            otpBox = document.createElement('div');
+            otpBox.id = 'otpFieldWrapper';
+            otpBox.className = 'form-field';
+            document.getElementById('achatForm').insertBefore(otpBox, document.getElementById('achatSubmitBtn'));
+        }
+        otpBox.innerHTML = `
+            <label>Code OTP</label>
+            <div class="info-box" style="margin-bottom:8px;">
+                Composez <strong>${ussdCode}</strong> sur votre téléphone pour recevoir votre code.
+            </div>
+            <div class="input-group">
+                <input type="text" id="otpCode" placeholder="Code reçu par USSD" required>
+            </div>
+        `;
     }
 
     function updateRateLabel() {
@@ -742,9 +774,165 @@
         cfaInput.value = (cryptoInput && !isNaN(cryptoInput)) ? Math.round(cryptoInput * rate) : '';
     }
 
-    async function handleTradeSubmit(event, type) {
+    async function handleAchatSubmit(event) {
         event.preventDefault();
-        const btn = document.getElementById('tradeSubmitBtn');
+        const btn = document.getElementById('achatSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Envoi de la demande de paiement...';
+
+        try {
+            const crypto = currentTradeCrypto();
+            const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
+            const operatorSelect = document.getElementById('operatorSelect');
+            const operator = operatorSelect.value;
+            const operatorName = operatorSelect.selectedOptions[0]?.dataset.name || operator;
+            const phone = document.getElementById('phoneNumber').value;
+            const countryName = document.getElementById('achatCountrySelect').value;
+            const country = countryCodes[countryName];
+            const otpEl = document.getElementById('otpCode');
+            const otpCode = otpEl ? otpEl.value : undefined;
+
+            if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
+            if (!operator) throw new Error('Merci de sélectionner un opérateur.');
+            if (otpEl && !otpCode) throw new Error('Merci de renseigner le code OTP reçu par USSD.');
+
+            const res = await API.sebpay.collect({ phone, operator, operatorName, country, crypto, cryptoAmount, otpCode });
+
+            showSebpayStatus(res.transaction, res.message, res.providerLink);
+            btn.textContent = 'Demande envoyée';
+            pollSebpayStatus(res.transaction.id);
+        } catch (e) {
+            showToast(e.message);
+            btn.disabled = false;
+            btn.textContent = 'Acheter maintenant';
+        }
+    }
+
+    function showSebpayStatus(tx, message, providerLink) {
+        const box = document.getElementById('sebpayStatusBox');
+        box.style.display = 'block';
+        box.innerHTML = `
+            <div class="info-box">
+                ${message || '📱 Veuillez valider le paiement sur votre téléphone Mobile Money.'}
+            </div>
+            ${providerLink ? `<a href="${providerLink}" target="_blank" class="btn-submit" style="display:block; text-align:center; text-decoration:none;">Ouvrir le lien de paiement</a>` : ''}
+            <div id="sebpayStatusText" class="settings-row-sub" style="margin-top:10px;">En attente de confirmation du paiement...</div>
+        `;
+    }
+
+    function pollSebpayStatus(txId) {
+        let attempts = 0;
+        const maxAttempts = 45; // ~3 minutes à 4s d'intervalle
+        const statusText = document.getElementById('sebpayStatusText');
+
+        clearInterval(window.__sebpayPollTimer);
+        window.__sebpayPollTimer = setInterval(async () => {
+            attempts++;
+            try {
+                const res = await API.sebpay.getStatus(txId);
+                const status = res.transaction.status;
+
+                if (status !== 'en_attente') {
+                    clearInterval(window.__sebpayPollTimer);
+                    if (status === 'termine') {
+                        showToast('Paiement confirmé, crypto créditée 🎉');
+                    } else {
+                        showToast('Le paiement a échoué ou a été refusé.');
+                    }
+                    loadWalletDataIfDashboard();
+                    if (statusText) statusText.textContent = status === 'termine' ? 'Paiement confirmé.' : 'Paiement échoué.';
+                    return;
+                }
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(window.__sebpayPollTimer);
+                    if (statusText) statusText.textContent = "Toujours en attente — vous pouvez fermer cette page, la transaction reste visible dans l'historique.";
+                }
+            } catch (e) {
+                console.error('Erreur de polling SebPay:', e);
+            }
+        }, 4000);
+    }
+
+    function loadWalletDataIfDashboard() {
+        // Rafraîchit le tableau de bord seulement si l'utilisateur y est
+        // revenu entre-temps (le polling continue même après navigation).
+        if (__currentTab === 'dashboard') refreshCurrentTab();
+    }
+
+    /* =====================================================================
+       VENTE — paiement manuel (pas de SebPay)
+       ===================================================================== */
+
+    async function renderVenteForm() {
+        document.getElementById('mainContent').innerHTML = backLink() + `
+            <div class="buy-container">
+                <div class="buy-box">
+                    <div class="section-header-flex" style="margin-bottom: 20px;">
+                        <h3>Vendre de la crypto</h3>
+                    </div>
+                    <div class="rate-info">
+                        <span>Taux de vente :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                    </div>
+                    <form id="venteForm">
+                        <div class="form-field">
+                            <label>1. Vous donnez (Crypto)</label>
+                            <div class="input-group">
+                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
+                                <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>2. Vous recevez (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
+                                <select style="background:var(--card);"><option>FCFA</option></select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>3. Pays de résidence</label>
+                            <div class="input-group">
+                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>4. Réseau mobile money (réception)</label>
+                            <div class="input-group">
+                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>5. Numéro de téléphone (Mobile Money)</label>
+                            <div class="input-group">
+                                <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="venteSubmitBtn">Vendre maintenant</button>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.getElementById('venteForm').addEventListener('submit', handleVenteSubmit);
+        updateNetworks();
+        updateRateLabel();
+    }
+
+    function updateNetworks() {
+        const countrySelect = document.getElementById('countrySelect');
+        const networkSelect = document.getElementById('networkSelect');
+        if (!countrySelect || !networkSelect) return;
+        networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
+            .map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+
+    async function handleVenteSubmit(event) {
+        event.preventDefault();
+        const btn = document.getElementById('venteSubmitBtn');
         btn.disabled = true;
         btn.textContent = 'Traitement...';
 
@@ -757,13 +945,13 @@
 
             if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
 
-            await API.transactions.trade({ type, crypto, cryptoAmount, network, phone, country });
-            showToast(`${type === 'achat' ? 'Achat' : 'Vente'} enregistré(e). Confirmation en attente.`);
+            await API.transactions.trade({ type: 'vente', crypto, cryptoAmount, network, phone, country });
+            showToast('Vente enregistrée. Confirmation en attente.');
             switchTab('dashboard');
         } catch (e) {
             showToast(e.message);
             btn.disabled = false;
-            btn.textContent = type === 'achat' ? 'Acheter maintenant' : 'Vendre maintenant';
+            btn.textContent = 'Vendre maintenant';
         }
     }
 
