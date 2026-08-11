@@ -253,15 +253,11 @@
 
     <script>
     /* =====================================================================
-       Ce fichier consomme le vrai backend via l'objet global `API` défini
-       dans js/api.js. C'est le SEUL script qui pilote cette page — il n'y a
-       pas de <script src="../js/dashboard.js">, donc ce fichier séparé n'a
-       aucun effet, ne le modifie plus.
+       Phase 1 : SebPay désactivé — achat/vente manuels, validés par un
+       admin. Le FCFA est maintenant un vrai solde stocké en base (crédité
+       par conversion crypto→FCFA), retirable vers Mobile Money.
        ===================================================================== */
 
-    /* Réseaux mobile money par pays — UTILISÉ UNIQUEMENT POUR LA VENTE
-       (réception manuelle). Pour l'ACHAT, les opérateurs viennent
-       maintenant de l'API SebPay (voir loadOperatorsForCountry). */
     const paymentNetworks = {
         "Burkina Faso": ["Orange Money BF", "Moov Africa BF", "Coris Money"],
         "Côte d'Ivoire": ["MTN Money CI", "Orange Money CI", "Moov Money CI", "Wave CI"],
@@ -273,23 +269,8 @@
         "Guinée": ["Orange Money GN", "MTN Money GN"]
     };
 
-    /* Codes pays attendus par l'API SebPay (voir doc "Pays supportés") */
-    const countryCodes = {
-        "Burkina Faso": "BF",
-        "Côte d'Ivoire": "CI",
-        "Sénégal": "SN",
-        "Mali": "ML",
-        "Bénin": "BJ",
-        "Togo": "TG",
-        "Niger": "NE",
-        "Guinée": "GN"
-    };
-
-    /* Taux par défaut (avant le premier chargement) — synchronisés avec ceux
-       renvoyés par GET /api/wallet/balances via syncRates() */
     const cryptoRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
 
-    /* Réseaux blockchain disponibles par crypto (dépôt / retrait) */
     const blockchainNetworks = {
         USDT: ["TRC20 (Tron)", "ERC20 (Ethereum)", "BEP20 (BNB Smart Chain)"],
         BTC: ["Bitcoin (BTC)"],
@@ -306,9 +287,15 @@
         "BNB|BEP20 (BNB Smart Chain)": "bnb1FAKE6q7v6b4Rk8s2C1dE4b7A9f0C6d5"
     };
 
-    const TX_LABELS = { achat: "Achat", vente: "Vente", conversion: "Conversion", depot: "Dépôt", retrait: "Retrait" };
+    const TX_LABELS = { achat: "Achat", vente: "Vente", conversion: "Conversion", depot: "Dépôt", retrait: "Retrait", retrait_fcfa: "Retrait Mobile Money" };
     const STATUS_LABELS = { termine: "Terminé", en_attente: "En attente", echoue: "Échoué" };
     const STATUS_BADGE = { termine: "badge-done", en_attente: "badge-pending", echoue: "badge-failed" };
+
+    // Doit rester cohérent avec computeFcfaWithdrawalFee() dans
+    // backend/src/utils/rates.js — sert uniquement à l'aperçu affiché avant
+    // soumission ; le serveur recalcule et fait foi.
+    const FCFA_WITHDRAWAL_FEE_PERCENT = 1.5;
+    const FCFA_WITHDRAWAL_MIN_FEE = 100;
 
     function normalizeTx(tx) {
         return {
@@ -318,6 +305,7 @@
             crypto: tx.crypto,
             cryptoAmount: tx.crypto_amount !== null && tx.crypto_amount !== undefined ? parseFloat(tx.crypto_amount) : null,
             fcfaAmount: tx.fcfa_amount !== null && tx.fcfa_amount !== undefined ? parseFloat(tx.fcfa_amount) : null,
+            feeAmount: tx.fee_amount !== null && tx.fee_amount !== undefined ? parseFloat(tx.fee_amount) : null,
             network: tx.network,
             phone: tx.phone,
             country: tx.country,
@@ -374,7 +362,8 @@
             vente: '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>',
             conversion: '<path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/>',
             depot: '<path d="M12 5v14"/><path d="M5 12l7 7 7-7"/>',
-            retrait: '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>'
+            retrait: '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>',
+            retrait_fcfa: '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>'
         };
         return icons[type] || icons.conversion;
     }
@@ -406,8 +395,8 @@
 
         try {
             if (tabName === 'dashboard') { setActiveMenus('dashboard'); await renderDashboard(); }
-            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderAchatForm(); }
-            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderVenteForm(); }
+            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderTradeForm('achat'); }
+            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderTradeForm('vente'); }
             else if (tabName === 'convertir') { setActiveMenus('dashboard'); await renderConvert(); }
             else if (tabName === 'deposer') { setActiveMenus('dashboard'); await renderDeposit(presetCrypto); }
             else if (tabName === 'retirer') { setActiveMenus('dashboard'); await renderWithdraw(presetCrypto); }
@@ -467,7 +456,10 @@
         const transactions = txRes.transactions.map(normalizeTx);
         const profile = normalizeProfile(meRes.user);
 
-        const totalAssets = Object.values(balances).reduce((s, v) => s + v, 0);
+        // Total "Cryptos" : ne compte que les cryptos, pas le solde FCFA.
+        const totalAssets = Object.entries(balances)
+            .filter(([c]) => c !== 'FCFA')
+            .reduce((s, [, v]) => s + v, 0);
         const pendingCount = transactions.filter(t => t.status === 'en_attente').length;
         const recent = transactions.slice(0, 5);
 
@@ -498,7 +490,7 @@
                         Solde total
                     </div>
                     <div class="stat-value">${fmtFCFA(totalFCFA)}</div>
-                    <div class="stat-sub">Équivalent temps réel</div>
+                    <div class="stat-sub">Cryptos + FCFA en solde</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-header">
@@ -579,11 +571,15 @@
             title += ` ${tx.crypto}`;
             sub = `${tx.network} · ${sub}`;
             amount = '-' + fmtCrypto(tx.cryptoAmount) + ' ' + tx.crypto;
+        } else if (tx.type === 'retrait_fcfa') {
+            sub = `${tx.network || ''} · ${sub}`;
+            const total = (tx.fcfaAmount || 0) + (tx.feeAmount || 0);
+            amount = '-' + fmtFCFA(total);
         }
 
         const actions = tx.status === 'en_attente'
             ? `<div class="tx-actions">
-                    ${tx.type === 'depot' || tx.type === 'retrait' ? `<button onclick="onConfirmTx('${tx.id}')">Confirmer</button>` : ''}
+                    ${['depot', 'achat', 'retrait', 'retrait_fcfa'].includes(tx.type) ? `<button onclick="onConfirmTx('${tx.id}')">Confirmer</button>` : ''}
                     <button onclick="onCancelTx('${tx.id}')">Annuler</button>
                </div>`
             : '';
@@ -624,49 +620,52 @@
     }
 
     /* =====================================================================
-       ACHAT — flux SebPay réel, avec confirmation et gestion OTP
+       ACHAT / VENTE — flux manuel (SebPay désactivé), validation admin.
        ===================================================================== */
 
-    async function renderAchatForm() {
+    async function renderTradeForm(type) {
+        const isAchat = type === 'achat';
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
                     <div class="section-header-flex" style="margin-bottom: 20px;">
-                        <h3>Acheter de la crypto</h3>
+                        <h3>${isAchat ? 'Acheter de la crypto' : 'Vendre de la crypto'}</h3>
                     </div>
                     <div class="rate-info">
-                        <span>Taux d'achat :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                        <span>Taux ${isAchat ? "d'achat" : "de vente"} :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
                     </div>
-                    <form id="achatForm">
+                    <form id="tradeForm">
                         <div class="form-field">
-                            <label>1. Vous donnez (FCFA)</label>
+                            <label>1. ${isAchat ? 'Vous donnez (FCFA)' : 'Vous donnez (Crypto)'}</label>
                             <div class="input-group">
-                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
-                                <select style="background:var(--card);"><option>FCFA</option></select>
+                                ${isAchat
+                                    ? `<input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required><select style="background:var(--card);"><option>FCFA</option></select>`
+                                    : `<input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required><select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>`
+                                }
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>2. Vous recevez (Crypto)</label>
+                            <label>2. ${isAchat ? 'Vous recevez (Crypto)' : 'Vous recevez (FCFA)'}</label>
                             <div class="input-group">
-                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
-                                <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCFA();">${cryptoOptions()}</select>
+                                ${isAchat
+                                    ? `<input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required><select id="cryptoSelect" onchange="updateRateLabel(); calcFromCFA();">${cryptoOptions()}</select>`
+                                    : `<input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required><select style="background:var(--card);"><option>FCFA</option></select>`
+                                }
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>3. Pays de résidence</label>
+                            <label>3. Pays de résidence (Afrique de l'Ouest)</label>
                             <div class="input-group">
-                                <select id="achatCountrySelect" onchange="loadOperatorsForCountry()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>4. Opérateur Mobile Money</label>
+                            <label>4. Réseau mobile money ${isAchat ? '(paiement)' : '(réception)'}</label>
                             <div class="input-group">
-                                <select id="operatorSelect" style="width:100%; border-left:none;">
-                                    <option value="">Chargement des opérateurs...</option>
-                                </select>
+                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
                             </div>
                         </div>
 
@@ -677,74 +676,24 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-submit" id="achatSubmitBtn">Acheter maintenant</button>
-                    </form>
+                        ${isAchat ? `<div class="info-box">Après validation, effectuez le paiement Mobile Money vers le numéro communiqué par un administrateur. Votre crypto sera créditée une fois le paiement vérifié.</div>` : ''}
 
-                    <div id="sebpayStatusBox" style="display:none; margin-top:16px;"></div>
+                        <button type="submit" class="btn-submit" id="tradeSubmitBtn">${isAchat ? 'Acheter maintenant' : 'Vendre maintenant'}</button>
+                    </form>
                 </div>
             </div>
         `;
-        document.getElementById('achatForm').addEventListener('submit', handleAchatSubmit);
+        document.getElementById('tradeForm').addEventListener('submit', (e) => handleTradeSubmit(e, type));
+        updateNetworks();
         updateRateLabel();
-        await loadOperatorsForCountry();
     }
 
-    // Charge les opérateurs réels de SebPay pour le pays sélectionné, et
-    // mémorise otp_required / ussd_code sur chaque <option> (voir doc "Vérification OTP").
-    async function loadOperatorsForCountry() {
-        const countryName = document.getElementById('achatCountrySelect').value;
-        const countryCode = countryCodes[countryName];
-        const select = document.getElementById('operatorSelect');
-        select.innerHTML = `<option value="">Chargement...</option>`;
-        try {
-            const res = await API.sebpay.getOperators(countryCode);
-            const operators = res.operators || [];
-            if (operators.length === 0) {
-                select.innerHTML = `<option value="">Aucun opérateur disponible pour ce pays</option>`;
-                return;
-            }
-            select.innerHTML = operators.map(op =>
-                `<option value="${op.slug}"
-                         data-name="${op.name || op.slug}"
-                         data-otp-required="${!!op.otp_required}"
-                         data-ussd-code="${op.ussd_code || ''}">
-                    ${op.name || op.slug}
-                 </option>`
-            ).join('');
-            select.onchange = updateOtpField;
-            updateOtpField();
-        } catch (e) {
-            select.innerHTML = `<option value="">Erreur de chargement des opérateurs</option>`;
-            showToast(e.message);
-        }
-    }
-
-    function updateOtpField() {
-        const select = document.getElementById('operatorSelect');
-        const opt = select.selectedOptions[0];
-        const otpRequired = opt && opt.dataset.otpRequired === 'true';
-        const ussdCode = opt ? opt.dataset.ussdCode : '';
-
-        let otpBox = document.getElementById('otpFieldWrapper');
-        if (!otpRequired) {
-            if (otpBox) otpBox.remove();
-            return;
-        }
-        if (!otpBox) {
-            otpBox = document.createElement('div');
-            otpBox.id = 'otpFieldWrapper';
-            otpBox.className = 'form-field';
-            document.getElementById('achatForm').insertBefore(otpBox, document.getElementById('achatSubmitBtn'));
-        }
-        otpBox.innerHTML = `
-            <label>Code OTP</label>
-            <div class="info-box" style="margin-bottom:8px;">
-                Composez <strong>${ussdCode}</strong> sur votre téléphone pour recevoir votre code.
-            </div>
-            <div class="input-group">
-                <input type="text" id="otpCode" placeholder="Code reçu par USSD" required>
-            </div>
-        `;
+    function updateNetworks() {
+        const countrySelect = document.getElementById('countrySelect');
+        const networkSelect = document.getElementById('networkSelect');
+        if (!countrySelect || !networkSelect) return;
+        networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
+            .map(n => `<option value="${n}">${n}</option>`).join('');
     }
 
     function updateRateLabel() {
@@ -774,165 +723,9 @@
         cfaInput.value = (cryptoInput && !isNaN(cryptoInput)) ? Math.round(cryptoInput * rate) : '';
     }
 
-    async function handleAchatSubmit(event) {
+    async function handleTradeSubmit(event, type) {
         event.preventDefault();
-        const btn = document.getElementById('achatSubmitBtn');
-        btn.disabled = true;
-        btn.textContent = 'Envoi de la demande de paiement...';
-
-        try {
-            const crypto = currentTradeCrypto();
-            const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
-            const operatorSelect = document.getElementById('operatorSelect');
-            const operator = operatorSelect.value;
-            const operatorName = operatorSelect.selectedOptions[0]?.dataset.name || operator;
-            const phone = document.getElementById('phoneNumber').value;
-            const countryName = document.getElementById('achatCountrySelect').value;
-            const country = countryCodes[countryName];
-            const otpEl = document.getElementById('otpCode');
-            const otpCode = otpEl ? otpEl.value : undefined;
-
-            if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
-            if (!operator) throw new Error('Merci de sélectionner un opérateur.');
-            if (otpEl && !otpCode) throw new Error('Merci de renseigner le code OTP reçu par USSD.');
-
-            const res = await API.sebpay.collect({ phone, operator, operatorName, country, crypto, cryptoAmount, otpCode });
-
-            showSebpayStatus(res.transaction, res.message, res.providerLink);
-            btn.textContent = 'Demande envoyée';
-            pollSebpayStatus(res.transaction.id);
-        } catch (e) {
-            showToast(e.message);
-            btn.disabled = false;
-            btn.textContent = 'Acheter maintenant';
-        }
-    }
-
-    function showSebpayStatus(tx, message, providerLink) {
-        const box = document.getElementById('sebpayStatusBox');
-        box.style.display = 'block';
-        box.innerHTML = `
-            <div class="info-box">
-                ${message || '📱 Veuillez valider le paiement sur votre téléphone Mobile Money.'}
-            </div>
-            ${providerLink ? `<a href="${providerLink}" target="_blank" class="btn-submit" style="display:block; text-align:center; text-decoration:none;">Ouvrir le lien de paiement</a>` : ''}
-            <div id="sebpayStatusText" class="settings-row-sub" style="margin-top:10px;">En attente de confirmation du paiement...</div>
-        `;
-    }
-
-    function pollSebpayStatus(txId) {
-        let attempts = 0;
-        const maxAttempts = 45; // ~3 minutes à 4s d'intervalle
-        const statusText = document.getElementById('sebpayStatusText');
-
-        clearInterval(window.__sebpayPollTimer);
-        window.__sebpayPollTimer = setInterval(async () => {
-            attempts++;
-            try {
-                const res = await API.sebpay.getStatus(txId);
-                const status = res.transaction.status;
-
-                if (status !== 'en_attente') {
-                    clearInterval(window.__sebpayPollTimer);
-                    if (status === 'termine') {
-                        showToast('Paiement confirmé, crypto créditée 🎉');
-                    } else {
-                        showToast('Le paiement a échoué ou a été refusé.');
-                    }
-                    loadWalletDataIfDashboard();
-                    if (statusText) statusText.textContent = status === 'termine' ? 'Paiement confirmé.' : 'Paiement échoué.';
-                    return;
-                }
-
-                if (attempts >= maxAttempts) {
-                    clearInterval(window.__sebpayPollTimer);
-                    if (statusText) statusText.textContent = "Toujours en attente — vous pouvez fermer cette page, la transaction reste visible dans l'historique.";
-                }
-            } catch (e) {
-                console.error('Erreur de polling SebPay:', e);
-            }
-        }, 4000);
-    }
-
-    function loadWalletDataIfDashboard() {
-        // Rafraîchit le tableau de bord seulement si l'utilisateur y est
-        // revenu entre-temps (le polling continue même après navigation).
-        if (__currentTab === 'dashboard') refreshCurrentTab();
-    }
-
-    /* =====================================================================
-       VENTE — paiement manuel (pas de SebPay)
-       ===================================================================== */
-
-    async function renderVenteForm() {
-        document.getElementById('mainContent').innerHTML = backLink() + `
-            <div class="buy-container">
-                <div class="buy-box">
-                    <div class="section-header-flex" style="margin-bottom: 20px;">
-                        <h3>Vendre de la crypto</h3>
-                    </div>
-                    <div class="rate-info">
-                        <span>Taux de vente :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
-                    </div>
-                    <form id="venteForm">
-                        <div class="form-field">
-                            <label>1. Vous donnez (Crypto)</label>
-                            <div class="input-group">
-                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
-                                <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>
-                            </div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>2. Vous recevez (FCFA)</label>
-                            <div class="input-group">
-                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
-                                <select style="background:var(--card);"><option>FCFA</option></select>
-                            </div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>3. Pays de résidence</label>
-                            <div class="input-group">
-                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
-                            </div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>4. Réseau mobile money (réception)</label>
-                            <div class="input-group">
-                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
-                            </div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>5. Numéro de téléphone (Mobile Money)</label>
-                            <div class="input-group">
-                                <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-submit" id="venteSubmitBtn">Vendre maintenant</button>
-                    </form>
-                </div>
-            </div>
-        `;
-        document.getElementById('venteForm').addEventListener('submit', handleVenteSubmit);
-        updateNetworks();
-        updateRateLabel();
-    }
-
-    function updateNetworks() {
-        const countrySelect = document.getElementById('countrySelect');
-        const networkSelect = document.getElementById('networkSelect');
-        if (!countrySelect || !networkSelect) return;
-        networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
-            .map(n => `<option value="${n}">${n}</option>`).join('');
-    }
-
-    async function handleVenteSubmit(event) {
-        event.preventDefault();
-        const btn = document.getElementById('venteSubmitBtn');
+        const btn = document.getElementById('tradeSubmitBtn');
         btn.disabled = true;
         btn.textContent = 'Traitement...';
 
@@ -945,18 +738,18 @@
 
             if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
 
-            await API.transactions.trade({ type: 'vente', crypto, cryptoAmount, network, phone, country });
-            showToast('Vente enregistrée. Confirmation en attente.');
+            await API.transactions.trade({ type, crypto, cryptoAmount, network, phone, country });
+            showToast(`${type === 'achat' ? 'Achat' : 'Vente'} enregistré(e). Confirmation en attente.`);
             switchTab('dashboard');
         } catch (e) {
             showToast(e.message);
             btn.disabled = false;
-            btn.textContent = 'Vendre maintenant';
+            btn.textContent = type === 'achat' ? 'Acheter maintenant' : 'Vendre maintenant';
         }
     }
 
     /* =====================================================================
-       CONVERSION
+       CONVERSION — gère maintenant le FCFA comme un vrai solde
        ===================================================================== */
 
     async function renderConvert() {
@@ -1004,6 +797,7 @@
                                     <option value="FCFA">FCFA</option>
                                 </select>
                             </div>
+                            <div class="settings-row-sub" id="toBalanceHint"></div>
                         </div>
 
                         <button type="submit" class="btn-submit" id="convertSubmitBtn">Convertir maintenant</button>
@@ -1020,13 +814,15 @@
     function valueInFCFA(amount, currency) { return currency === 'FCFA' ? amount : amount * cryptoRates[currency]; }
     function fromFCFA(amountFCFA, currency) { return currency === 'FCFA' ? amountFCFA : amountFCFA / cryptoRates[currency]; }
 
+    function balanceHintFor(currency) {
+        const bal = (window.__balancesCache && window.__balancesCache[currency]) || 0;
+        return currency === 'FCFA' ? `Solde disponible : ${fmtFCFA(bal)}` : `Solde disponible : ${fmtCrypto(bal)} ${currency}`;
+    }
+
     function updateFromBalanceHint() {
         const from = document.getElementById('fromCurrency').value;
         const hint = document.getElementById('fromBalanceHint');
-        if (!hint) return;
-        if (from === 'FCFA') { hint.textContent = ''; return; }
-        const bal = (window.__balancesCache && window.__balancesCache[from]) || 0;
-        hint.textContent = `Solde disponible : ${fmtCrypto(bal)} ${from}`;
+        if (hint) hint.textContent = balanceHintFor(from);
     }
 
     function onConvertCurrencyChange() {
@@ -1096,7 +892,7 @@
     }
 
     /* =====================================================================
-       DÉPÔT
+       DÉPÔT — vers/depuis un portefeuille EXTERNE (blockchain), inchangé.
        ===================================================================== */
 
     async function renderDeposit(presetCrypto) {
@@ -1202,60 +998,80 @@
     }
 
     /* =====================================================================
-       RETRAIT
+       RETRAIT — deux modes : vers un portefeuille externe (crypto) OU
+       vers Mobile Money (FCFA, nouveau).
        ===================================================================== */
 
-    async function renderWithdraw(presetCrypto) {
+    async function renderWithdraw(preset) {
         const balancesRes = await API.wallet.getBalances();
         syncRates(balancesRes.rates);
         window.__balancesCache = balancesRes.balances;
 
+        const initialMode = preset === 'FCFA' ? 'fcfa' : 'crypto';
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
                     <div class="section-header-flex" style="margin-bottom: 20px;">
-                        <h3>Retirer vers un autre portefeuille</h3>
+                        <h3>Retirer</h3>
                     </div>
-
-                    <form id="withdrawForm">
-                        <div class="form-field">
-                            <label>1. Crypto à retirer</label>
-                            <div class="input-group">
-                                <select id="withdrawCrypto" onchange="updateWithdrawNetworks()" style="width:100%; border-left:none;">${cryptoOptions()}</select>
-                            </div>
-                            <div class="settings-row-sub" id="withdrawBalanceHint"></div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>2. Réseau (blockchain)</label>
-                            <div class="input-group">
-                                <select id="withdrawNetwork" style="width:100%; border-left:none;"></select>
-                            </div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>3. Adresse de destination</label>
-                            <div class="input-group">
-                                <input type="text" id="withdrawAddress" placeholder="Collez l'adresse du portefeuille externe" required style="width:100%;">
-                            </div>
-                        </div>
-
-                        <div class="form-field">
-                            <label>4. Montant à retirer</label>
-                            <div class="input-group">
-                                <input type="number" min="0" step="any" id="withdrawAmount" placeholder="0.0000" required>
-                                <select style="background:var(--card);" id="withdrawAmountUnit"></select>
-                            </div>
-                        </div>
-
-                        <div class="warning-box">
-                            Vérifiez que l'adresse et le réseau sélectionnés correspondent bien au portefeuille de destination. Un retrait vers une adresse incompatible avec le réseau choisi entraîne une perte définitive des fonds.
-                        </div>
-
-                        <button type="submit" class="btn-submit" id="withdrawSubmitBtn">Retirer maintenant</button>
-                    </form>
+                    <div class="segmented" style="margin-bottom:20px; width:100%; display:flex;">
+                        <button type="button" id="withdrawModeCryptoBtn" onclick="setWithdrawMode('crypto')" style="flex:1;">Portefeuille externe (crypto)</button>
+                        <button type="button" id="withdrawModeFcfaBtn" onclick="setWithdrawMode('fcfa')" style="flex:1;">Mobile Money (FCFA)</button>
+                    </div>
+                    <div id="withdrawFormContainer"></div>
                 </div>
             </div>
+        `;
+        window.__withdrawPresetCrypto = preset && preset !== 'FCFA' ? preset : null;
+        setWithdrawMode(initialMode);
+    }
+
+    function setWithdrawMode(mode) {
+        document.getElementById('withdrawModeCryptoBtn').classList.toggle('active', mode === 'crypto');
+        document.getElementById('withdrawModeFcfaBtn').classList.toggle('active', mode === 'fcfa');
+        if (mode === 'crypto') renderWithdrawCryptoForm(window.__withdrawPresetCrypto);
+        else renderWithdrawFcfaForm();
+    }
+
+    function renderWithdrawCryptoForm(presetCrypto) {
+        document.getElementById('withdrawFormContainer').innerHTML = `
+            <form id="withdrawForm">
+                <div class="form-field">
+                    <label>1. Crypto à retirer</label>
+                    <div class="input-group">
+                        <select id="withdrawCrypto" onchange="updateWithdrawNetworks()" style="width:100%; border-left:none;">${cryptoOptions()}</select>
+                    </div>
+                    <div class="settings-row-sub" id="withdrawBalanceHint"></div>
+                </div>
+
+                <div class="form-field">
+                    <label>2. Réseau (blockchain)</label>
+                    <div class="input-group">
+                        <select id="withdrawNetwork" style="width:100%; border-left:none;"></select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>3. Adresse de destination</label>
+                    <div class="input-group">
+                        <input type="text" id="withdrawAddress" placeholder="Collez l'adresse du portefeuille externe" required style="width:100%;">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>4. Montant à retirer</label>
+                    <div class="input-group">
+                        <input type="number" min="0" step="any" id="withdrawAmount" placeholder="0.0000" required>
+                        <select style="background:var(--card);" id="withdrawAmountUnit"></select>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    Vérifiez que l'adresse et le réseau sélectionnés correspondent bien au portefeuille de destination. Un retrait vers une adresse incompatible avec le réseau choisi entraîne une perte définitive des fonds.
+                </div>
+
+                <button type="submit" class="btn-submit" id="withdrawSubmitBtn">Retirer maintenant</button>
+            </form>
         `;
         document.getElementById('withdrawForm').addEventListener('submit', handleWithdrawSubmit);
         if (presetCrypto) document.getElementById('withdrawCrypto').value = presetCrypto;
@@ -1293,8 +1109,95 @@
         }
     }
 
+    // --- Retrait FCFA vers Mobile Money (nouveau) ---
+
+    function renderWithdrawFcfaForm() {
+        const bal = (window.__balancesCache && window.__balancesCache.FCFA) || 0;
+        document.getElementById('withdrawFormContainer').innerHTML = `
+            <div class="settings-row-sub" style="margin-bottom:16px;">Solde FCFA disponible : ${fmtFCFA(bal)}</div>
+            <form id="withdrawFcfaForm">
+                <div class="form-field">
+                    <label>1. Montant à recevoir (FCFA)</label>
+                    <div class="input-group">
+                        <input type="number" min="0" step="any" id="fcfaWithdrawAmount" placeholder="Ex: 5000" oninput="updateFcfaFeePreview()" required>
+                        <select style="background:var(--card);"><option>FCFA</option></select>
+                    </div>
+                </div>
+
+                <div class="info-box" id="fcfaFeePreview">Frais : — · Total débité de votre solde : —</div>
+
+                <div class="form-field">
+                    <label>2. Pays de résidence</label>
+                    <div class="input-group">
+                        <select id="fcfaWithdrawCountry" onchange="updateFcfaWithdrawNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>3. Réseau mobile money (réception)</label>
+                    <div class="input-group">
+                        <select id="fcfaWithdrawNetwork" style="width:100%; border-left:none;"></select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>4. Numéro de téléphone (Mobile Money)</label>
+                    <div class="input-group">
+                        <input type="tel" id="fcfaWithdrawPhone" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="fcfaWithdrawSubmitBtn">Retirer maintenant</button>
+            </form>
+        `;
+        document.getElementById('withdrawFcfaForm').addEventListener('submit', handleFcfaWithdrawSubmit);
+        updateFcfaWithdrawNetworks();
+        updateFcfaFeePreview();
+    }
+
+    function updateFcfaWithdrawNetworks() {
+        const countrySelect = document.getElementById('fcfaWithdrawCountry');
+        const networkSelect = document.getElementById('fcfaWithdrawNetwork');
+        if (!countrySelect || !networkSelect) return;
+        networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
+            .map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+
+    function updateFcfaFeePreview() {
+        const amount = parseFloat(document.getElementById('fcfaWithdrawAmount').value);
+        const preview = document.getElementById('fcfaFeePreview');
+        if (!amount || isNaN(amount)) {
+            preview.textContent = 'Frais : — · Total débité de votre solde : —';
+            return;
+        }
+        const fee = Math.max(Math.round(amount * FCFA_WITHDRAWAL_FEE_PERCENT / 100), FCFA_WITHDRAWAL_MIN_FEE);
+        preview.textContent = `Frais : ${fmtFCFA(fee)} · Total débité de votre solde : ${fmtFCFA(amount + fee)}`;
+    }
+
+    async function handleFcfaWithdrawSubmit(event) {
+        event.preventDefault();
+        const btn = document.getElementById('fcfaWithdrawSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Traitement...';
+        try {
+            const amount = parseFloat(document.getElementById('fcfaWithdrawAmount').value);
+            const network = document.getElementById('fcfaWithdrawNetwork').value;
+            const phone = document.getElementById('fcfaWithdrawPhone').value;
+            const country = document.getElementById('fcfaWithdrawCountry').value;
+            if (!amount) throw new Error('Merci de renseigner un montant valide.');
+
+            await API.transactions.withdrawFcfa({ amount, network, phone, country });
+            showToast('Retrait Mobile Money enregistré. Confirmation en attente.');
+            switchTab('transactions');
+        } catch (e) {
+            showToast(e.message);
+            btn.disabled = false;
+            btn.textContent = 'Retirer maintenant';
+        }
+    }
+
     /* =====================================================================
-       PORTEFEUILLE
+       PORTEFEUILLE — inclut désormais la carte FCFA
        ===================================================================== */
 
     async function renderWallet() {
@@ -1303,7 +1206,23 @@
         const balances = balancesRes.balances;
         const totalFCFA = balancesRes.totalFCFA;
 
-        const cardsHTML = Object.keys(cryptoRates).map(c => {
+        const fcfaCardHTML = `
+            <div class="wallet-card">
+                <div class="wallet-card-top">
+                    <div class="wallet-coin"><div class="coin-badge">FCFA</div>FCFA</div>
+                </div>
+                <div class="wallet-amounts">
+                    <div class="amount">${fmtFCFA(balances.FCFA || 0)}</div>
+                    <div class="fcfa">Solde disponible pour retrait Mobile Money</div>
+                </div>
+                <div class="wallet-card-actions">
+                    <div class="mini-btn" onclick="switchTab('retirer', 'FCFA')">Retirer</div>
+                    <div class="mini-btn" onclick="switchTab('convertir')">Convertir</div>
+                </div>
+            </div>
+        `;
+
+        const cryptoCardsHTML = Object.keys(cryptoRates).map(c => {
             const amt = balances[c] || 0;
             return `
                 <div class="wallet-card">
@@ -1329,7 +1248,7 @@
                 <div class="label">Valeur totale estimée</div>
                 <div class="value">${fmtFCFA(totalFCFA)}</div>
             </div>
-            <div class="wallet-grid">${cardsHTML}</div>
+            <div class="wallet-grid">${fcfaCardHTML}${cryptoCardsHTML}</div>
         `;
     }
 
@@ -1348,7 +1267,8 @@
             { key: 'vente', label: 'Ventes' },
             { key: 'conversion', label: 'Conversions' },
             { key: 'depot', label: 'Dépôts' },
-            { key: 'retrait', label: 'Retraits' }
+            { key: 'retrait', label: 'Retraits crypto' },
+            { key: 'retrait_fcfa', label: 'Retraits Mobile Money' }
         ];
         const chipsHTML = chips.map(c =>
             `<div class="chip ${c.key === filter ? 'active' : ''}" onclick="renderTransactions('${c.key}')">${c.label}</div>`
