@@ -54,7 +54,7 @@
         .stat-value { font-size: 22px; font-weight: 700; }
         .stat-sub { font-size: 12px; color: var(--green); font-weight: 600; }
 
-        .actions-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+        .actions-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 32px; }
         .action-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
         .action-card:hover { border-color: var(--text); transform: translateY(-2px); }
         .action-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text); }
@@ -171,6 +171,56 @@
         .bottom-nav li { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); font-size: 11px; cursor: pointer; padding: 4px 8px; }
         .bottom-nav li.active { color: var(--text); font-weight: 600; }
 
+        /* ========== P2P Styles ========== */
+        .p2p-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        @media (max-width: 900px) { .p2p-container { grid-template-columns: 1fr; } }
+
+        .p2p-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .p2p-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .p2p-card-header h4 { font-size: 15px; font-weight: 700; }
+        .p2p-badge { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+        .p2p-badge.buy { background: rgba(3, 166, 109, 0.12); color: var(--green); }
+        .p2p-badge.sell { background: rgba(207, 48, 74, 0.12); color: var(--red); }
+
+        .p2p-ad { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; }
+        .p2p-ad:hover { border-color: var(--text); }
+        .p2p-ad-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .p2p-ad-user { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+        .p2p-ad-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+        .p2p-ad-price { font-weight: 700; font-size: 15px; }
+        .p2p-ad-meta { display: flex; gap: 16px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+        .p2p-ad-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .p2p-ad-actions .mini-btn { flex: 1; padding: 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
+        .p2p-ad-actions .mini-btn.buy-btn { background: var(--green); color: white; border-color: var(--green); }
+        .p2p-ad-actions .mini-btn.sell-btn { background: var(--red); color: white; border-color: var(--red); }
+        .p2p-ad-actions .mini-btn:hover { opacity: 0.9; }
+        .p2p-payment-methods { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .p2p-payment-method { font-size: 10px; padding: 2px 8px; border-radius: 100px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
+
+        .p2p-tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+        .p2p-tabs button { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--muted); font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .p2p-tabs button.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .p2p-tabs button:hover { color: var(--text); }
+
+        .p2p-empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+        .p2p-empty svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; }
+        .p2p-order-status { font-size: 11px; padding: 2px 10px; border-radius: 100px; font-weight: 600; }
+        .p2p-order-status.open { background: rgba(3, 166, 109, 0.12); color: var(--green); }
+        .p2p-order-status.pending { background: rgba(212, 160, 23, 0.14); color: var(--amber); }
+        .p2p-order-status.closed { background: var(--bg); color: var(--muted); }
+
+        .p2p-orders-list { display: flex; flex-direction: column; gap: 10px; }
+        .p2p-order-item { border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; cursor: pointer; }
+        .p2p-order-item:hover { border-color: var(--text); }
+        .p2p-order-item-left { display: flex; flex-direction: column; gap: 4px; }
+        .p2p-order-item-left .title { font-weight: 600; font-size: 14px; }
+        .p2p-order-item-left .sub { font-size: 12px; color: var(--muted); }
+        .p2p-order-item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .p2p-order-item-right .amount { font-weight: 700; font-size: 15px; }
+
+        .p2p-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 560px) { .p2p-form-row { grid-template-columns: 1fr; } }
+
         @media (max-width: 900px) {
             .sidebar { display: none; }
             .main { margin-left: 0; padding: 20px 16px 90px; }
@@ -204,6 +254,10 @@
                     <li onclick="switchTab('transactions')">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
                         Transactions
+                    </li>
+                    <li onclick="switchTab('p2p')">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/><circle cx="12" cy="12" r="1.5"/></svg>
+                        P2P
                     </li>
                     <li onclick="switchTab('profil')">
                         <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
@@ -242,6 +296,10 @@
                 <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
                 Historique
             </li>
+            <li onclick="switchTab('p2p')">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/><circle cx="12" cy="12" r="1.5"/></svg>
+                P2P
+            </li>
             <li onclick="switchTab('profil')">
                 <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
                 Profil
@@ -253,11 +311,7 @@
 
     <script>
     /* =====================================================================
-       Deux comptes distincts (FCFA et crypto). Taux d'achat et de vente
-       différents (spread). Achat crédite le compte crypto au taux d'achat
-       (à la confirmation), sans jamais toucher le FCFA. Vente débite le
-       compte crypto immédiatement au taux de vente. Conversion débite/
-       crédite les deux comptes concernés, avec le même principe de spread.
+       DONNÉES INITIALES ET CONFIGURATION
        ===================================================================== */
 
     const paymentNetworks = {
@@ -271,7 +325,6 @@
         "Guinée": ["Orange Money GN", "MTN Money GN"]
     };
 
-    // Taux par défaut (avant premier chargement) — synchronisés via syncRates().
     let buyRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
     let sellRates = { USDT: 566, BTC: 33462838, ETH: 2103378, BNB: 334628 };
 
@@ -297,6 +350,30 @@
 
     const FCFA_WITHDRAWAL_FEE_PERCENT = 1.5;
     const FCFA_WITHDRAWAL_MIN_FEE = 100;
+
+    // =====================================================================
+    // P2P DATA
+    // =====================================================================
+
+    let P2P_DATA = {
+        ads: [
+            { id: 1, type: 'buy', crypto: 'USDT', price: 585, minAmount: 5000, maxAmount: 500000, user: 'Jean Dupont', userRating: 98, paymentMethods: ['Orange Money', 'MTN Momo', 'Wave'], country: 'Burkina Faso', timeLimit: 15 },
+            { id: 2, type: 'buy', crypto: 'BTC', price: 34500000, minAmount: 50000, maxAmount: 2000000, user: 'Marie Koné', userRating: 95, paymentMethods: ['Orange Money', 'Moov Africa'], country: 'Côte d\'Ivoire', timeLimit: 20 },
+            { id: 3, type: 'sell', crypto: 'USDT', price: 580, minAmount: 10000, maxAmount: 1000000, user: 'Amadou Diop', userRating: 97, paymentMethods: ['Wave', 'Orange Money', 'Free Money'], country: 'Sénégal', timeLimit: 15 },
+            { id: 4, type: 'sell', crypto: 'ETH', price: 2100000, minAmount: 100000, maxAmount: 5000000, user: 'Fatima Traoré', userRating: 99, paymentMethods: ['MTN Momo', 'Moov Money'], country: 'Mali', timeLimit: 30 }
+        ],
+        orders: [
+            { id: 1, type: 'buy', crypto: 'USDT', amount: 500, price: 585, total: 292500, status: 'open', counterparty: 'Jean Dupont', createdAt: Date.now() - 3600000 },
+            { id: 2, type: 'sell', crypto: 'BTC', amount: 0.01, price: 34500000, total: 345000, status: 'pending', counterparty: 'Marie Koné', createdAt: Date.now() - 7200000 }
+        ]
+    };
+
+    let currentP2PFilter = 'all';
+    let currentP2PCrypto = 'USDT';
+
+    // =====================================================================
+    // FONCTIONS UTILITAIRES
+    // =====================================================================
 
     function normalizeTx(tx) {
         return {
@@ -404,6 +481,7 @@
             else if (tabName === 'retirer') { setActiveMenus('dashboard'); await renderWithdraw(presetCrypto); }
             else if (tabName === 'portefeuille') { setActiveMenus('portefeuille'); await renderWallet(); }
             else if (tabName === 'transactions') { setActiveMenus('transactions'); await renderTransactions('tous'); }
+            else if (tabName === 'p2p') { setActiveMenus('p2p'); await renderP2P(); }
             else if (tabName === 'profil') { setActiveMenus('profil'); await renderProfil(); }
             else if (tabName === 'parametres') { setActiveMenus('parametres'); await renderParametres(); }
         } catch (err) {
@@ -412,13 +490,13 @@
     }
 
     function setActiveMenus(tabName) {
-        const map = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'profil': 3, 'parametres': 4 };
+        const map = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'p2p': 3, 'profil': 4, 'parametres': 5 };
         const index = map[tabName] !== undefined ? map[tabName] : 0;
 
         const sidebarItems = document.querySelectorAll('.sidebar-menu li:not(.logout)');
         if (sidebarItems[index]) sidebarItems[index].classList.add('active');
 
-        const bottomMap = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'profil': 3 };
+        const bottomMap = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'p2p': 3, 'profil': 4 };
         const bottomItems = document.querySelectorAll('.bottom-nav li');
         if (bottomMap[tabName] !== undefined && bottomItems[bottomMap[tabName]]) {
             bottomItems[bottomMap[tabName]].classList.add('active');
@@ -442,8 +520,7 @@
     }
 
     /* =====================================================================
-       TABLEAU DE BORD — deux stats distinctes : solde FCFA seul, et total
-       crypto seul (pas de fusion en un chiffre unique).
+       TABLEAU DE BORD
        ===================================================================== */
 
     async function renderDashboard() {
@@ -540,6 +617,10 @@
                     <div class="action-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></div>
                     <span>Retirer</span>
                 </div>
+                <div class="action-card" onclick="switchTab('p2p')">
+                    <div class="action-icon" style="color:var(--amber);"><svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/><circle cx="12" cy="12" r="1.5"/></svg></div>
+                    <span>P2P</span>
+                </div>
             </div>
 
             <div class="card-section">
@@ -621,8 +702,8 @@
     }
 
     /* =====================================================================
-       ACHAT — crédite le compte crypto au taux d'achat, ne touche jamais
-       le FCFA. Le client indique une adresse + un réseau blockchain.
+       ACHAT / VENTE / CONVERSION / DÉPÔT / RETRAIT
+       (fonctions existantes inchangées - gardées pour référence)
        ===================================================================== */
 
     async function renderTradeForm(type) {
@@ -740,10 +821,6 @@
         }
     }
 
-    /* =====================================================================
-       VENTE — débite le compte crypto immédiatement, au taux de VENTE.
-       ===================================================================== */
-
     async function renderVenteForm() {
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
@@ -811,8 +888,6 @@
     }
 
     function currentRatesForTab() {
-        // achatForm vs venteForm : utilise le bon jeu de taux selon le
-        // formulaire actuellement affiché.
         return document.getElementById('achatForm') ? buyRates : sellRates;
     }
 
@@ -868,11 +943,9 @@
         }
     }
 
-    /* =====================================================================
-       CONVERSION — vend la devise source (taux de vente si crypto), achète
-       la devise cible (taux d'achat si crypto). FCFA↔FCFA n'existe pas
-       (une des deux devises est toujours différente de l'autre).
-       ===================================================================== */
+    // =====================================================================
+    // CONVERSION
+    // =====================================================================
 
     async function renderConvert() {
         const balancesRes = await API.wallet.getBalances();
@@ -933,9 +1006,7 @@
         updateFromBalanceHint();
     }
 
-    // Valeur en FCFA de "amount" unités de "currency" si on la VEND (source).
     function sellValueInFCFA(amount, currency) { return currency === 'FCFA' ? amount : amount * sellRates[currency]; }
-    // Quantité de "currency" obtenue avec "fcfaValue" si on l'ACHÈTE (cible).
     function buyAmountFromFCFA(fcfaValue, currency) { return currency === 'FCFA' ? fcfaValue : fcfaValue / buyRates[currency]; }
 
     function balanceHintFor(currency) {
@@ -978,10 +1049,6 @@
             toEl.value = !isNaN(amount) ? buyAmountFromFCFA(sellValueInFCFA(amount, from), to).toFixed(to === 'FCFA' ? 0 : 6) : '';
         } else {
             const amount = parseFloat(toEl.value);
-            // Sens inverse : on part de la quantité cible désirée pour
-            // remonter au montant source nécessaire — utilise le taux de
-            // vente sur la cible et le taux d'achat sur la source, symétrie
-            // volontaire pour un aperçu cohérent (le serveur recalcule).
             fromEl.value = !isNaN(amount) ? buyAmountFromFCFA(sellValueInFCFA(amount, to), from).toFixed(from === 'FCFA' ? 0 : 6) : '';
         }
     }
@@ -1019,9 +1086,9 @@
         }
     }
 
-    /* =====================================================================
-       DÉPÔT — vers/depuis un portefeuille EXTERNE (blockchain), inchangé.
-       ===================================================================== */
+    // =====================================================================
+    // DÉPÔT
+    // =====================================================================
 
     async function renderDeposit(presetCrypto) {
         document.getElementById('mainContent').innerHTML = backLink() + `
@@ -1125,10 +1192,9 @@
         }
     }
 
-    /* =====================================================================
-       RETRAIT — deux modes : portefeuille externe (crypto) OU Mobile Money
-       (FCFA).
-       ===================================================================== */
+    // =====================================================================
+    // RETRAIT
+    // =====================================================================
 
     async function renderWithdraw(preset) {
         const balancesRes = await API.wallet.getBalances();
@@ -1322,9 +1388,9 @@
         }
     }
 
-    /* =====================================================================
-       PORTEFEUILLE — carte FCFA distincte des cartes crypto.
-       ===================================================================== */
+    // =====================================================================
+    // PORTEFEUILLE
+    // =====================================================================
 
     async function renderWallet() {
         const balancesRes = await API.wallet.getBalances();
@@ -1373,9 +1439,9 @@
         `;
     }
 
-    /* =====================================================================
-       TRANSACTIONS
-       ===================================================================== */
+    // =====================================================================
+    // TRANSACTIONS
+    // =====================================================================
 
     async function renderTransactions(filter) {
         __currentTab = 'transactions';
@@ -1411,9 +1477,476 @@
         setActiveMenus('transactions');
     }
 
-    /* =====================================================================
-       PROFIL
-       ===================================================================== */
+    // =====================================================================
+    // P2P - Peer-to-Peer
+    // =====================================================================
+
+    async function renderP2P() {
+        document.getElementById('mainContent').innerHTML = backLink() + `
+            <div class="topbar">
+                <h1>P2P - Échange peer-to-peer</h1>
+                <div class="topbar-actions">
+                    <button class="btn-submit" style="width:auto; padding:10px 20px;" onclick="openP2PCreateAd()">
+                        + Publier une annonce
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;">
+                <div class="p2p-tabs" style="flex:1;">
+                    <button class="${currentP2PFilter === 'all' ? 'active' : ''}" onclick="setP2PFilter('all')">Toutes</button>
+                    <button class="${currentP2PFilter === 'buy' ? 'active' : ''}" onclick="setP2PFilter('buy')">Achat</button>
+                    <button class="${currentP2PFilter === 'sell' ? 'active' : ''}" onclick="setP2PFilter('sell')">Vente</button>
+                </div>
+                <div class="input-group" style="width:180px;">
+                    <select id="p2pCryptoFilter" onchange="setP2PCrypto(this.value)" style="padding:10px 14px; border:none; background:var(--bg); color:var(--text);">
+                        <option value="USDT">USDT</option>
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="BNB">BNB</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="p2p-container">
+                <div class="p2p-card">
+                    <div class="p2p-card-header">
+                        <h4>💰 Acheter</h4>
+                        <span class="p2p-badge buy">${P2P_DATA.ads.filter(a => a.type === 'buy').length} annonces</span>
+                    </div>
+                    ${renderP2PAds('buy')}
+                </div>
+                <div class="p2p-card">
+                    <div class="p2p-card-header">
+                        <h4>💵 Vendre</h4>
+                        <span class="p2p-badge sell">${P2P_DATA.ads.filter(a => a.type === 'sell').length} annonces</span>
+                    </div>
+                    ${renderP2PAds('sell')}
+                </div>
+            </div>
+
+            <div class="card-section" style="margin-top:20px;">
+                <div class="section-header-flex">
+                    <h3>📋 Mes commandes P2P</h3>
+                    <button class="see-all" onclick="switchTab('p2pOrders')">Voir tout →</button>
+                </div>
+                <div class="p2p-orders-list">
+                    ${P2P_DATA.orders.length === 0 ? `
+                        <div class="p2p-empty">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
+                            <p>Aucune commande P2P</p>
+                            <span>Publiez une annonce ou répondez à une offre</span>
+                        </div>
+                    ` : P2P_DATA.orders.map(renderP2POrder).join('')}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('p2pCryptoFilter').value = currentP2PCrypto;
+    }
+
+    function renderP2PAds(type) {
+        const filtered = P2P_DATA.ads.filter(a => a.type === type);
+        if (filtered.length === 0) {
+            return `<div class="p2p-empty"><p>Aucune annonce ${type === 'buy' ? "d'achat" : 'de vente'} disponible</p></div>`;
+        }
+        return filtered.map(ad => `
+            <div class="p2p-ad" onclick="openP2POrder('${ad.id}')">
+                <div class="p2p-ad-top">
+                    <div class="p2p-ad-user">
+                        <div class="p2p-ad-user-avatar">${ad.user.charAt(0)}</div>
+                        ${ad.user}
+                        <span style="font-size:11px;color:var(--muted);">★ ${ad.userRating}%</span>
+                    </div>
+                    <div class="p2p-ad-price">${ad.price.toLocaleString('fr-FR')} FCFA</div>
+                </div>
+                <div class="p2p-ad-meta">
+                    <span>💰 ${ad.minAmount.toLocaleString()} - ${ad.maxAmount.toLocaleString()} FCFA</span>
+                    <span>⏱️ ${ad.timeLimit} min</span>
+                    <span>📍 ${ad.country}</span>
+                </div>
+                <div class="p2p-payment-methods">
+                    ${ad.paymentMethods.map(m => `<span class="p2p-payment-method">${m}</span>`).join('')}
+                </div>
+                <div class="p2p-ad-actions">
+                    <div class="mini-btn ${type === 'buy' ? 'buy-btn' : 'sell-btn'}" onclick="event.stopPropagation(); openP2POrder('${ad.id}')">
+                        ${type === 'buy' ? 'Acheter' : 'Vendre'}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderP2POrder(order) {
+        const statusLabels = { open: 'Ouverte', pending: 'En cours', closed: 'Terminée' };
+        const statusClasses = { open: 'open', pending: 'pending', closed: 'closed' };
+        return `
+            <div class="p2p-order-item" onclick="viewP2POrder('${order.id}')">
+                <div class="p2p-order-item-left">
+                    <div class="title">
+                        ${order.type === 'buy' ? '🟢 Achat' : '🔴 Vente'} ${order.crypto}
+                    </div>
+                    <div class="sub">
+                        ${order.counterparty} · ${fmtDate(order.createdAt)}
+                    </div>
+                </div>
+                <div class="p2p-order-item-right">
+                    <span class="p2p-order-status ${statusClasses[order.status]}">${statusLabels[order.status]}</span>
+                    <div class="amount">${order.amount} ${order.crypto}</div>
+                    <div style="font-size:12px;color:var(--muted);">${order.total.toLocaleString('fr-FR')} FCFA</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function setP2PFilter(filter) {
+        currentP2PFilter = filter;
+        renderP2P();
+    }
+
+    function setP2PCrypto(crypto) {
+        currentP2PCrypto = crypto;
+        renderP2P();
+    }
+
+    function openP2POrder(adId) {
+        const ad = P2P_DATA.ads.find(a => a.id === parseInt(adId));
+        if (!ad) return;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        `;
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        modal.innerHTML = `
+            <div style="background:var(--card); border-radius:16px; max-width:480px; width:100%; padding:24px; max-height:90vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="font-size:18px; font-weight:700;">
+                        ${ad.type === 'buy' ? '💰 Acheter' : '💵 Vendre'} ${ad.crypto}
+                    </h3>
+                    <button onclick="this.closest('div[style*=\\'position:fixed\\']').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);">✕</button>
+                </div>
+
+                <div style="padding:16px; background:var(--bg); border-radius:12px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; font-size:14px;">
+                        <span style="color:var(--muted);">Prix</span>
+                        <span style="font-weight:600;">${ad.price.toLocaleString('fr-FR')} FCFA</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px;">
+                        <span style="color:var(--muted);">${ad.type === 'buy' ? 'Vendeur' : 'Acheteur'}</span>
+                        <span style="font-weight:600;">${ad.user} ★ ${ad.userRating}%</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px;">
+                        <span style="color:var(--muted);">Limites</span>
+                        <span style="font-weight:600;">${ad.minAmount.toLocaleString()} - ${ad.maxAmount.toLocaleString()} FCFA</span>
+                    </div>
+                </div>
+
+                <form id="p2pOrderForm" onsubmit="submitP2POrder(event, '${ad.id}')">
+                    <div class="form-field">
+                        <label>Montant (FCFA)</label>
+                        <div class="input-group">
+                            <input type="number" id="p2pAmount" placeholder="Ex: 50000" min="${ad.minAmount}" max="${ad.maxAmount}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Vous ${ad.type === 'buy' ? 'recevrez' : 'donnerez'}</label>
+                        <div class="input-group">
+                            <input type="text" id="p2pReceiveAmount" disabled style="background:var(--bg);">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Méthode de paiement</label>
+                        <div class="input-group">
+                            <select id="p2pPaymentMethod" required style="width:100%; border-left:none;">
+                                ${ad.paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Votre téléphone</label>
+                        <div class="input-group">
+                            <input type="tel" id="p2pPhone" placeholder="+226 00 00 00 00" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Confirmer la commande</button>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('p2pAmount').addEventListener('input', function() {
+            const amount = parseFloat(this.value) || 0;
+            const cryptoAmount = amount / ad.price;
+            document.getElementById('p2pReceiveAmount').value = cryptoAmount.toFixed(6) + ' ' + ad.crypto;
+        });
+    }
+
+    async function submitP2POrder(event, adId) {
+        event.preventDefault();
+        const form = event.target;
+        const btn = form.querySelector('.btn-submit');
+        btn.disabled = true;
+        btn.textContent = 'Traitement...';
+
+        try {
+            const ad = P2P_DATA.ads.find(a => a.id === parseInt(adId));
+            const amount = parseFloat(document.getElementById('p2pAmount').value);
+            const paymentMethod = document.getElementById('p2pPaymentMethod').value;
+            const phone = document.getElementById('p2pPhone').value;
+
+            const newOrder = {
+                id: P2P_DATA.orders.length + 1,
+                type: ad.type,
+                crypto: ad.crypto,
+                amount: amount / ad.price,
+                price: ad.price,
+                total: amount,
+                status: 'pending',
+                counterparty: ad.user,
+                createdAt: Date.now()
+            };
+            P2P_DATA.orders.unshift(newOrder);
+
+            document.querySelector('div[style*="position:fixed"]').remove();
+            showToast(`✅ Commande ${ad.type === 'buy' ? "d'achat" : 'de vente'} P2P créée !`);
+            renderP2P();
+
+        } catch (error) {
+            showToast(error.message);
+            btn.disabled = false;
+            btn.textContent = 'Confirmer la commande';
+        }
+    }
+
+    function viewP2POrder(orderId) {
+        const order = P2P_DATA.orders.find(o => o.id === parseInt(orderId));
+        if (!order) return;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        `;
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        modal.innerHTML = `
+            <div style="background:var(--card); border-radius:16px; max-width:500px; width:100%; padding:24px; max-height:90vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="font-size:18px; font-weight:700;">Commande #${order.id}</h3>
+                    <button onclick="this.closest('div[style*=\\'position:fixed\\']').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);">✕</button>
+                </div>
+
+                <div style="padding:16px; background:var(--bg); border-radius:12px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; font-size:14px;">
+                        <span style="color:var(--muted);">Type</span>
+                        <span style="font-weight:600;">${order.type === 'buy' ? '🟢 Achat' : '🔴 Vente'}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px;">
+                        <span style="color:var(--muted);">Crypto</span>
+                        <span style="font-weight:600;">${order.amount} ${order.crypto}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px;">
+                        <span style="color:var(--muted);">Total</span>
+                        <span style="font-weight:600;">${order.total.toLocaleString('fr-FR')} FCFA</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px;">
+                        <span style="color:var(--muted);">Statut</span>
+                        <span class="p2p-order-status ${order.status === 'open' ? 'open' : order.status === 'pending' ? 'pending' : 'closed'}">
+                            ${order.status === 'open' ? 'Ouverte' : order.status === 'pending' ? 'En cours' : 'Terminée'}
+                        </span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px;">
+                        <span style="color:var(--muted);">Contrepartie</span>
+                        <span style="font-weight:600;">${order.counterparty}</span>
+                    </div>
+                </div>
+
+                ${order.status === 'pending' ? `
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-submit" style="flex:1;" onclick="confirmP2POrder('${order.id}')">
+                            ✅ Confirmer
+                        </button>
+                        <button class="btn-secondary" style="flex:1;" onclick="cancelP2POrder('${order.id}')">
+                            ❌ Annuler
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    async function confirmP2POrder(orderId) {
+        const order = P2P_DATA.orders.find(o => o.id === parseInt(orderId));
+        if (!order) return;
+        order.status = 'closed';
+        document.querySelector('div[style*="position:fixed"]')?.remove();
+        showToast('✅ Commande confirmée !');
+        renderP2P();
+    }
+
+    async function cancelP2POrder(orderId) {
+        const order = P2P_DATA.orders.find(o => o.id === parseInt(orderId));
+        if (!order) return;
+        if (!confirm('Annuler cette commande ?')) return;
+        order.status = 'closed';
+        document.querySelector('div[style*="position:fixed"]')?.remove();
+        showToast('❌ Commande annulée');
+        renderP2P();
+    }
+
+    function openP2PCreateAd() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        `;
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        modal.innerHTML = `
+            <div style="background:var(--card); border-radius:16px; max-width:480px; width:100%; padding:24px; max-height:90vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="font-size:18px; font-weight:700;">📢 Publier une annonce</h3>
+                    <button onclick="this.closest('div[style*=\\'position:fixed\\']').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);">✕</button>
+                </div>
+
+                <form id="p2pCreateAdForm" onsubmit="submitP2PAd(event)">
+                    <div class="form-field">
+                        <label>Type</label>
+                        <div class="input-group">
+                            <select id="p2pAdType" required style="width:100%; border-left:none;">
+                                <option value="buy">💰 Achat</option>
+                                <option value="sell">💵 Vente</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Cryptomonnaie</label>
+                        <div class="input-group">
+                            <select id="p2pAdCrypto" required style="width:100%; border-left:none;">
+                                <option value="USDT">USDT</option>
+                                <option value="BTC">BTC</option>
+                                <option value="ETH">ETH</option>
+                                <option value="BNB">BNB</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Prix (FCFA)</label>
+                        <div class="input-group">
+                            <input type="number" id="p2pAdPrice" placeholder="Ex: 585" required>
+                        </div>
+                    </div>
+
+                    <div class="p2p-form-row">
+                        <div class="form-field">
+                            <label>Min (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" id="p2pAdMin" placeholder="5000" required>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>Max (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" id="p2pAdMax" placeholder="500000" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Pays</label>
+                        <div class="input-group">
+                            <select id="p2pAdCountry" required style="width:100%; border-left:none;">
+                                ${countryOptions()}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Méthodes de paiement</label>
+                        <div class="input-group">
+                            <select id="p2pAdPaymentMethods" multiple style="width:100%; border-left:none; height:80px; padding:8px;">
+                                <option value="Orange Money">Orange Money</option>
+                                <option value="MTN Momo">MTN Momo</option>
+                                <option value="Moov Money">Moov Money</option>
+                                <option value="Wave">Wave</option>
+                                <option value="Free Money">Free Money</option>
+                            </select>
+                        </div>
+                        <div class="settings-row-sub">Maintenez Ctrl/Cmd pour sélectionner plusieurs</div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Publier l'annonce</button>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    async function submitP2PAd(event) {
+        event.preventDefault();
+        const btn = event.target.querySelector('.btn-submit');
+        btn.disabled = true;
+        btn.textContent = 'Publication...';
+
+        try {
+            const type = document.getElementById('p2pAdType').value;
+            const crypto = document.getElementById('p2pAdCrypto').value;
+            const price = parseFloat(document.getElementById('p2pAdPrice').value);
+            const minAmount = parseFloat(document.getElementById('p2pAdMin').value);
+            const maxAmount = parseFloat(document.getElementById('p2pAdMax').value);
+            const country = document.getElementById('p2pAdCountry').value;
+            const paymentSelect = document.getElementById('p2pAdPaymentMethods');
+            const paymentMethods = Array.from(paymentSelect.selectedOptions).map(opt => opt.value);
+
+            if (!price || !minAmount || !maxAmount) throw new Error('Veuillez remplir tous les champs');
+            if (minAmount > maxAmount) throw new Error('Le minimum doit être inférieur au maximum');
+            if (paymentMethods.length === 0) throw new Error('Sélectionnez au moins une méthode de paiement');
+
+            const newAd = {
+                id: P2P_DATA.ads.length + 1,
+                type,
+                crypto,
+                price,
+                minAmount,
+                maxAmount,
+                user: 'Vous',
+                userRating: 100,
+                paymentMethods,
+                country,
+                timeLimit: 15
+            };
+            P2P_DATA.ads.unshift(newAd);
+
+            document.querySelector('div[style*="position:fixed"]').remove();
+            showToast('✅ Annonce publiée avec succès !');
+            renderP2P();
+
+        } catch (error) {
+            showToast(error.message);
+            btn.disabled = false;
+            btn.textContent = 'Publier l\'annonce';
+        }
+    }
+
+    // =====================================================================
+    // PROFIL
+    // =====================================================================
 
     async function renderProfil() {
         const res = await API.profile.get();
@@ -1510,9 +2043,9 @@
         } catch (e) { showToast(e.message); }
     }
 
-    /* =====================================================================
-       PARAMÈTRES
-       ===================================================================== */
+    // =====================================================================
+    // PARAMÈTRES
+    // =====================================================================
 
     async function renderParametres() {
         const res = await API.settings.get();
@@ -1659,9 +2192,9 @@
         }
     }
 
-    /* =====================================================================
-       INITIALISATION
-       ===================================================================== */
+    // =====================================================================
+    // INITIALISATION
+    // =====================================================================
 
     (function applyCachedTheme() {
         const cached = localStorage.getItem('theme');
