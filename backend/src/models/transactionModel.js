@@ -7,14 +7,15 @@ function exec(client, text, params) {
 async function createTransaction(client, userId, data) {
     const result = await exec(client,
         `INSERT INTO transactions
-            (user_id, type, status, crypto, crypto_amount, fcfa_amount, fee_amount, network, phone, country,
-             from_currency, from_amount, to_currency, to_amount, address, tx_id,
+            (user_id, type, status, crypto, crypto_amount, fcfa_amount, fee_amount, network, crypto_network,
+             phone, country, from_currency, from_amount, to_currency, to_amount, address, tx_id,
              payment_method, operator_slug, provider_transaction_id, provider_link)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
          RETURNING *`,
         [
             userId, data.type, data.status || 'en_attente', data.crypto || null, data.cryptoAmount || null,
-            data.fcfaAmount || null, data.feeAmount || null, data.network || null, data.phone || null, data.country || null,
+            data.fcfaAmount || null, data.feeAmount || null, data.network || null, data.cryptoNetwork || null,
+            data.phone || null, data.country || null,
             data.fromCurrency || null, data.fromAmount || null, data.toCurrency || null, data.toAmount || null,
             data.address || null, data.txId || null,
             data.paymentMethod || null, data.operatorSlug || null,

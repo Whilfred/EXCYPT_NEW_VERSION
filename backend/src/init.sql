@@ -86,3 +86,5 @@ ALTER TABLE transactions ADD CONSTRAINT transactions_type_check
 
 ALTER TABLE transactions
     ADD COLUMN IF NOT EXISTS fee_amount NUMERIC(18,2);
+    
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS crypto_network VARCHAR(60);

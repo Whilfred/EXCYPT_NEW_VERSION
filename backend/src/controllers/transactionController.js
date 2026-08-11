@@ -2,7 +2,7 @@ const { pool } = require('../config/database');
 const walletModel = require('../models/walletModel');
 const transactionModel = require('../models/transactionModel');
 const {
-    CRYPTO_RATES, NETWORKS_BY_CRYPTO, isValidCrypto,
+    CRYPTO_BUY_RATES, CRYPTO_SELL_RATES, NETWORKS_BY_CRYPTO, isValidCrypto,
     MIN_FCFA_WITHDRAWAL, computeFcfaWithdrawalFee
 } = require('../utils/rates');
 
@@ -19,11 +19,14 @@ async function list(req, res) {
     }
 }
 
-// Phase 1 (SebPay désactivé) : achat ET vente sont manuels, validés par un
-// admin. La vente débite le wallet immédiatement. L'achat ne crédite JAMAIS
-// ici — uniquement à la confirmation admin (voir confirm()).
+// Achat : crédite UNIQUEMENT le compte crypto, au taux d'achat, à la
+// confirmation admin (voir confirm()). Le compte FCFA n'est jamais touché
+// (le paiement se fait en Mobile Money, hors du solde interne). Le client
+// indique une adresse + un réseau blockchain de réception.
+// Vente : débite le compte crypto immédiatement, au taux de VENTE
+// (différent, plus bas — spread de la plateforme).
 async function trade(req, res) {
-    const { type, crypto, network, phone, country } = req.body;
+    const { type, crypto, network, phone, country, address, cryptoNetwork } = req.body;
     const cryptoAmount = parseFloat(req.body.cryptoAmount);
 
     if (!['achat', 'vente'].includes(type)) {
@@ -38,8 +41,17 @@ async function trade(req, res) {
     if (!phone || !network || !country) {
         return res.status(400).json({ error: 'Réseau, pays et téléphone requis.' });
     }
+    if (type === 'achat') {
+        if (!address) {
+            return res.status(400).json({ error: 'Adresse de réception requise.' });
+        }
+        if (!cryptoNetwork || !NETWORKS_BY_CRYPTO[crypto].includes(cryptoNetwork)) {
+            return res.status(400).json({ error: 'Réseau blockchain invalide pour cette crypto.' });
+        }
+    }
 
-    const fcfaAmount = Math.round(cryptoAmount * CRYPTO_RATES[crypto]);
+    const rate = type === 'achat' ? CRYPTO_BUY_RATES[crypto] : CRYPTO_SELL_RATES[crypto];
+    const fcfaAmount = Math.round(cryptoAmount * rate);
     const client = await pool.connect();
 
     try {
@@ -50,7 +62,9 @@ async function trade(req, res) {
         }
 
         const tx = await transactionModel.createTransaction(client, req.user.id, {
-            type, status: 'en_attente', crypto, cryptoAmount, fcfaAmount, network, phone, country
+            type, status: 'en_attente', crypto, cryptoAmount, fcfaAmount, network, phone, country,
+            address: type === 'achat' ? address : null,
+            cryptoNetwork: type === 'achat' ? cryptoNetwork : null
         });
 
         await client.query('COMMIT');
@@ -64,10 +78,10 @@ async function trade(req, res) {
     }
 }
 
-// Conversion — gère maintenant le FCFA comme une vraie devise stockée
-// (avant : convertir crypto→FCFA ne créditait rien, et FCFA→crypto créditait
-// de la crypto sans jamais débiter le FCFA. Corrigé : les deux sens
-// débitent/créditent systématiquement, y compris quand FCFA est impliqué).
+// Conversion — le FCFA et les cryptos sont deux comptes distincts,
+// débités/crédités au bon taux selon le sens : vendre une crypto (source)
+// utilise le taux de VENTE, acheter une crypto (destination) utilise le
+// taux d'ACHAT. FCFA↔FCFA n'a pas de taux (1:1).
 async function convert(req, res) {
     const { fromCurrency, toCurrency } = req.body;
     const fromAmount = parseFloat(req.body.fromAmount);
@@ -88,9 +102,10 @@ async function convert(req, res) {
         return res.status(400).json({ error: 'Montant invalide.' });
     }
 
-    // Montants toujours recalculés côté serveur à partir des taux serveur.
-    const fcfaValue = isFromCrypto ? fromAmount * CRYPTO_RATES[fromCurrency] : fromAmount;
-    const toAmount = isToCrypto ? fcfaValue / CRYPTO_RATES[toCurrency] : fcfaValue;
+    // On "vend" fromCurrency (taux de vente si crypto) puis on "achète"
+    // toCurrency (taux d'achat si crypto) — recalculé côté serveur.
+    const fcfaValue = isFromCrypto ? fromAmount * CRYPTO_SELL_RATES[fromCurrency] : fromAmount;
+    const toAmount = isToCrypto ? fcfaValue / CRYPTO_BUY_RATES[toCurrency] : fcfaValue;
 
     const client = await pool.connect();
 
@@ -144,7 +159,6 @@ async function deposit(req, res) {
     }
 }
 
-// Retrait crypto vers un portefeuille externe (blockchain).
 async function withdraw(req, res) {
     const { crypto, network, address } = req.body;
     const amount = parseFloat(req.body.amount);
@@ -181,9 +195,6 @@ async function withdraw(req, res) {
     }
 }
 
-// NOUVEAU : retrait du solde FCFA vers un compte Mobile Money.
-// Le client saisit le montant qu'il veut RECEVOIR ; le total débité de son
-// solde FCFA = montant + frais (voir computeFcfaWithdrawalFee).
 async function withdrawFcfa(req, res) {
     const { network, phone, country } = req.body;
     const amount = parseFloat(req.body.amount);
@@ -223,7 +234,6 @@ async function withdrawFcfa(req, res) {
     }
 }
 
-// Crédite le wallet pour un dépôt OU un achat manuel confirmé par l'admin.
 async function confirm(req, res) {
     const { id } = req.params;
     const client = await pool.connect();
@@ -240,8 +250,6 @@ async function confirm(req, res) {
         if ((tx.type === 'depot' || tx.type === 'achat') && tx.crypto_amount) {
             await walletModel.incrementBalance(client, req.user.id, tx.crypto, parseFloat(tx.crypto_amount));
         }
-        // retrait / retrait_fcfa / vente : déjà réglés à la création, rien
-        // à créditer ici — confirmer marque juste l'opération comme faite.
 
         const updated = await transactionModel.updateStatus(client, id, 'termine');
         await client.query('COMMIT');
@@ -255,8 +263,6 @@ async function confirm(req, res) {
     }
 }
 
-// Rembourse le wallet pour un retrait crypto, une vente, ou un retrait FCFA
-// annulé (tous débitent le wallet immédiatement à la création).
 async function cancel(req, res) {
     const { id } = req.params;
     const client = await pool.connect();
