@@ -253,9 +253,11 @@
 
     <script>
     /* =====================================================================
-       Phase 1 : SebPay désactivé — achat/vente manuels, validés par un
-       admin. Le FCFA est maintenant un vrai solde stocké en base (crédité
-       par conversion crypto→FCFA), retirable vers Mobile Money.
+       Deux comptes distincts (FCFA et crypto). Taux d'achat et de vente
+       différents (spread). Achat crédite le compte crypto au taux d'achat
+       (à la confirmation), sans jamais toucher le FCFA. Vente débite le
+       compte crypto immédiatement au taux de vente. Conversion débite/
+       crédite les deux comptes concernés, avec le même principe de spread.
        ===================================================================== */
 
     const paymentNetworks = {
@@ -269,7 +271,9 @@
         "Guinée": ["Orange Money GN", "MTN Money GN"]
     };
 
-    const cryptoRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
+    // Taux par défaut (avant premier chargement) — synchronisés via syncRates().
+    let buyRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
+    let sellRates = { USDT: 566, BTC: 33462838, ETH: 2103378, BNB: 334628 };
 
     const blockchainNetworks = {
         USDT: ["TRC20 (Tron)", "ERC20 (Ethereum)", "BEP20 (BNB Smart Chain)"],
@@ -291,9 +295,6 @@
     const STATUS_LABELS = { termine: "Terminé", en_attente: "En attente", echoue: "Échoué" };
     const STATUS_BADGE = { termine: "badge-done", en_attente: "badge-pending", echoue: "badge-failed" };
 
-    // Doit rester cohérent avec computeFcfaWithdrawalFee() dans
-    // backend/src/utils/rates.js — sert uniquement à l'aperçu affiché avant
-    // soumission ; le serveur recalcule et fait foi.
     const FCFA_WITHDRAWAL_FEE_PERCENT = 1.5;
     const FCFA_WITHDRAWAL_MIN_FEE = 100;
 
@@ -307,6 +308,7 @@
             fcfaAmount: tx.fcfa_amount !== null && tx.fcfa_amount !== undefined ? parseFloat(tx.fcfa_amount) : null,
             feeAmount: tx.fee_amount !== null && tx.fee_amount !== undefined ? parseFloat(tx.fee_amount) : null,
             network: tx.network,
+            cryptoNetwork: tx.crypto_network,
             phone: tx.phone,
             country: tx.country,
             fromCurrency: tx.from_currency,
@@ -330,9 +332,9 @@
         };
     }
 
-    function syncRates(rates) {
-        if (!rates) return;
-        Object.keys(rates).forEach(c => { if (cryptoRates[c] !== undefined) cryptoRates[c] = rates[c]; });
+    function syncRates(newBuyRates, newSellRates) {
+        if (newBuyRates) Object.keys(newBuyRates).forEach(c => { if (buyRates[c] !== undefined) buyRates[c] = newBuyRates[c]; });
+        if (newSellRates) Object.keys(newSellRates).forEach(c => { if (sellRates[c] !== undefined) sellRates[c] = newSellRates[c]; });
     }
 
     function showToast(msg) {
@@ -354,7 +356,7 @@
     }
 
     function countryOptions() { return Object.keys(paymentNetworks).map(c => `<option value="${c}">${c}</option>`).join(''); }
-    function cryptoOptions() { return Object.keys(cryptoRates).map(c => `<option value="${c}">${c}</option>`).join(''); }
+    function cryptoOptions() { return Object.keys(buyRates).map(c => `<option value="${c}">${c}</option>`).join(''); }
 
     function txIconSvg(type) {
         const icons = {
@@ -440,7 +442,8 @@
     }
 
     /* =====================================================================
-       TABLEAU DE BORD
+       TABLEAU DE BORD — deux stats distinctes : solde FCFA seul, et total
+       crypto seul (pas de fusion en un chiffre unique).
        ===================================================================== */
 
     async function renderDashboard() {
@@ -450,14 +453,12 @@
             API.auth.me()
         ]);
 
-        syncRates(balancesRes.rates);
+        syncRates(balancesRes.buyRates, balancesRes.sellRates);
         const balances = balancesRes.balances;
-        const totalFCFA = balancesRes.totalFCFA;
         const transactions = txRes.transactions.map(normalizeTx);
         const profile = normalizeProfile(meRes.user);
 
-        // Total "Cryptos" : ne compte que les cryptos, pas le solde FCFA.
-        const totalAssets = Object.entries(balances)
+        const totalCryptoUnits = Object.entries(balances)
             .filter(([c]) => c !== 'FCFA')
             .reduce((s, [, v]) => s + v, 0);
         const pendingCount = transactions.filter(t => t.status === 'en_attente').length;
@@ -487,18 +488,18 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <svg class="icon" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/></svg>
-                        Solde total
+                        Solde FCFA
                     </div>
-                    <div class="stat-value">${fmtFCFA(totalFCFA)}</div>
-                    <div class="stat-sub">Cryptos + FCFA en solde</div>
+                    <div class="stat-value">${fmtFCFA(balances.FCFA || 0)}</div>
+                    <div class="stat-sub">Compte FCFA</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-header">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M12 2l3 5-3 5-3-5 3-5z"/><path d="M12 12l3 5-3 5-3-5 3-5z"/></svg>
                         Cryptos
                     </div>
-                    <div class="stat-value">${fmtCrypto(totalAssets)}</div>
-                    <div class="stat-sub" style="color:var(--muted);">Total actifs</div>
+                    <div class="stat-value">${fmtCrypto(totalCryptoUnits)}</div>
+                    <div class="stat-sub" style="color:var(--muted);">Compte crypto</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-header">
@@ -558,7 +559,7 @@
 
         if (tx.type === 'achat' || tx.type === 'vente') {
             title += ` ${tx.crypto}`;
-            sub = `${tx.network || ''} · ${sub}`;
+            sub = `${tx.network || ''}${tx.cryptoNetwork ? ' → ' + tx.cryptoNetwork : ''} · ${sub}`;
             amount = (tx.type === 'achat' ? '+' : '-') + fmtCrypto(tx.cryptoAmount) + ' ' + tx.crypto;
         } else if (tx.type === 'conversion') {
             title = `${tx.fromCurrency} → ${tx.toCurrency}`;
@@ -620,50 +621,51 @@
     }
 
     /* =====================================================================
-       ACHAT / VENTE — flux manuel (SebPay désactivé), validation admin.
+       ACHAT — crédite le compte crypto au taux d'achat, ne touche jamais
+       le FCFA. Le client indique une adresse + un réseau blockchain.
        ===================================================================== */
 
     async function renderTradeForm(type) {
-        const isAchat = type === 'achat';
+        if (type === 'achat') return renderAchatForm();
+        return renderVenteForm();
+    }
+
+    async function renderAchatForm() {
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
                     <div class="section-header-flex" style="margin-bottom: 20px;">
-                        <h3>${isAchat ? 'Acheter de la crypto' : 'Vendre de la crypto'}</h3>
+                        <h3>Acheter de la crypto</h3>
                     </div>
                     <div class="rate-info">
-                        <span>Taux ${isAchat ? "d'achat" : "de vente"} :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                        <span>Taux d'achat :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
                     </div>
-                    <form id="tradeForm">
+                    <form id="achatForm">
                         <div class="form-field">
-                            <label>1. ${isAchat ? 'Vous donnez (FCFA)' : 'Vous donnez (Crypto)'}</label>
+                            <label>1. Vous donnez (FCFA)</label>
                             <div class="input-group">
-                                ${isAchat
-                                    ? `<input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required><select style="background:var(--card);"><option>FCFA</option></select>`
-                                    : `<input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required><select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>`
-                                }
+                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
+                                <select style="background:var(--card);"><option>FCFA</option></select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>2. ${isAchat ? 'Vous recevez (Crypto)' : 'Vous recevez (FCFA)'}</label>
+                            <label>2. Vous recevez (Crypto)</label>
                             <div class="input-group">
-                                ${isAchat
-                                    ? `<input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required><select id="cryptoSelect" onchange="updateRateLabel(); calcFromCFA();">${cryptoOptions()}</select>`
-                                    : `<input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required><select style="background:var(--card);"><option>FCFA</option></select>`
-                                }
+                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
+                                <select id="cryptoSelect" onchange="updateRateLabel(); updateAchatNetworks(); calcFromCFA();">${cryptoOptions()}</select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>3. Pays de résidence (Afrique de l'Ouest)</label>
+                            <label>3. Pays de résidence (paiement)</label>
                             <div class="input-group">
                                 <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>4. Réseau mobile money ${isAchat ? '(paiement)' : '(réception)'}</label>
+                            <label>4. Réseau mobile money (paiement)</label>
                             <div class="input-group">
                                 <select id="networkSelect" style="width:100%; border-left:none;"></select>
                             </div>
@@ -676,14 +678,126 @@
                             </div>
                         </div>
 
-                        ${isAchat ? `<div class="info-box">Après validation, effectuez le paiement Mobile Money vers le numéro communiqué par un administrateur. Votre crypto sera créditée une fois le paiement vérifié.</div>` : ''}
+                        <div class="form-field">
+                            <label>6. Réseau blockchain (réception)</label>
+                            <div class="input-group">
+                                <select id="achatCryptoNetwork" style="width:100%; border-left:none;"></select>
+                            </div>
+                        </div>
 
-                        <button type="submit" class="btn-submit" id="tradeSubmitBtn">${isAchat ? 'Acheter maintenant' : 'Vendre maintenant'}</button>
+                        <div class="form-field">
+                            <label>7. Adresse de réception</label>
+                            <div class="input-group">
+                                <input type="text" id="achatAddress" placeholder="Adresse de votre portefeuille" required style="width:100%;">
+                            </div>
+                        </div>
+
+                        <div class="info-box">Après validation, effectuez le paiement Mobile Money vers le numéro communiqué par un administrateur. Votre crypto sera créditée une fois le paiement vérifié.</div>
+
+                        <button type="submit" class="btn-submit" id="achatSubmitBtn">Acheter maintenant</button>
                     </form>
                 </div>
             </div>
         `;
-        document.getElementById('tradeForm').addEventListener('submit', (e) => handleTradeSubmit(e, type));
+        document.getElementById('achatForm').addEventListener('submit', handleAchatSubmit);
+        updateNetworks();
+        updateAchatNetworks();
+        updateRateLabel();
+    }
+
+    function updateAchatNetworks() {
+        const crypto = document.getElementById('cryptoSelect').value;
+        const select = document.getElementById('achatCryptoNetwork');
+        if (!select) return;
+        select.innerHTML = blockchainNetworks[crypto].map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+
+    async function handleAchatSubmit(event) {
+        event.preventDefault();
+        const btn = document.getElementById('achatSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Traitement...';
+
+        try {
+            const crypto = document.getElementById('cryptoSelect').value;
+            const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
+            const network = document.getElementById('networkSelect').value;
+            const phone = document.getElementById('phoneNumber').value;
+            const country = document.getElementById('countrySelect').value;
+            const cryptoNetwork = document.getElementById('achatCryptoNetwork').value;
+            const address = document.getElementById('achatAddress').value;
+
+            if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
+            if (!address) throw new Error('Merci de renseigner une adresse de réception.');
+
+            await API.transactions.trade({ type: 'achat', crypto, cryptoAmount, network, phone, country, cryptoNetwork, address });
+            showToast('Achat enregistré. Confirmation en attente.');
+            switchTab('dashboard');
+        } catch (e) {
+            showToast(e.message);
+            btn.disabled = false;
+            btn.textContent = 'Acheter maintenant';
+        }
+    }
+
+    /* =====================================================================
+       VENTE — débite le compte crypto immédiatement, au taux de VENTE.
+       ===================================================================== */
+
+    async function renderVenteForm() {
+        document.getElementById('mainContent').innerHTML = backLink() + `
+            <div class="buy-container">
+                <div class="buy-box">
+                    <div class="section-header-flex" style="margin-bottom: 20px;">
+                        <h3>Vendre de la crypto</h3>
+                    </div>
+                    <div class="rate-info">
+                        <span>Taux de vente :</span> <span id="rateLabel">1 USDT = 566 FCFA</span>
+                    </div>
+                    <form id="venteForm">
+                        <div class="form-field">
+                            <label>1. Vous donnez (Crypto)</label>
+                            <div class="input-group">
+                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
+                                <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>2. Vous recevez (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
+                                <select style="background:var(--card);"><option>FCFA</option></select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>3. Pays de résidence</label>
+                            <div class="input-group">
+                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>4. Réseau mobile money (réception)</label>
+                            <div class="input-group">
+                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>5. Numéro de téléphone (Mobile Money)</label>
+                            <div class="input-group">
+                                <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="venteSubmitBtn">Vendre maintenant</button>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.getElementById('venteForm').addEventListener('submit', handleVenteSubmit);
         updateNetworks();
         updateRateLabel();
     }
@@ -696,10 +810,16 @@
             .map(n => `<option value="${n}">${n}</option>`).join('');
     }
 
+    function currentRatesForTab() {
+        // achatForm vs venteForm : utilise le bon jeu de taux selon le
+        // formulaire actuellement affiché.
+        return document.getElementById('achatForm') ? buyRates : sellRates;
+    }
+
     function updateRateLabel() {
         const select = document.getElementById('cryptoSelect');
         const crypto = select ? select.value : 'USDT';
-        const rate = cryptoRates[crypto];
+        const rate = currentRatesForTab()[crypto];
         const label = document.getElementById('rateLabel');
         if (label) label.textContent = `1 ${crypto} = ${rate.toLocaleString('fr-FR')} FCFA`;
     }
@@ -712,20 +832,20 @@
     function calcFromCFA() {
         const cfaInput = document.getElementById('cfaInput').value;
         const cryptoOutput = document.getElementById('cryptoOutput');
-        const rate = cryptoRates[currentTradeCrypto()];
+        const rate = currentRatesForTab()[currentTradeCrypto()];
         cryptoOutput.value = (cfaInput && !isNaN(cfaInput)) ? (cfaInput / rate).toFixed(6) : '';
     }
 
     function calcFromCrypto() {
         const cryptoInput = document.getElementById('cryptoOutput').value;
         const cfaInput = document.getElementById('cfaInput');
-        const rate = cryptoRates[currentTradeCrypto()];
+        const rate = currentRatesForTab()[currentTradeCrypto()];
         cfaInput.value = (cryptoInput && !isNaN(cryptoInput)) ? Math.round(cryptoInput * rate) : '';
     }
 
-    async function handleTradeSubmit(event, type) {
+    async function handleVenteSubmit(event) {
         event.preventDefault();
-        const btn = document.getElementById('tradeSubmitBtn');
+        const btn = document.getElementById('venteSubmitBtn');
         btn.disabled = true;
         btn.textContent = 'Traitement...';
 
@@ -738,23 +858,25 @@
 
             if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
 
-            await API.transactions.trade({ type, crypto, cryptoAmount, network, phone, country });
-            showToast(`${type === 'achat' ? 'Achat' : 'Vente'} enregistré(e). Confirmation en attente.`);
+            await API.transactions.trade({ type: 'vente', crypto, cryptoAmount, network, phone, country });
+            showToast('Vente enregistrée. Confirmation en attente.');
             switchTab('dashboard');
         } catch (e) {
             showToast(e.message);
             btn.disabled = false;
-            btn.textContent = type === 'achat' ? 'Acheter maintenant' : 'Vendre maintenant';
+            btn.textContent = 'Vendre maintenant';
         }
     }
 
     /* =====================================================================
-       CONVERSION — gère maintenant le FCFA comme un vrai solde
+       CONVERSION — vend la devise source (taux de vente si crypto), achète
+       la devise cible (taux d'achat si crypto). FCFA↔FCFA n'existe pas
+       (une des deux devises est toujours différente de l'autre).
        ===================================================================== */
 
     async function renderConvert() {
         const balancesRes = await API.wallet.getBalances();
-        syncRates(balancesRes.rates);
+        syncRates(balancesRes.buyRates, balancesRes.sellRates);
         window.__balancesCache = balancesRes.balances;
 
         document.getElementById('mainContent').innerHTML = backLink() + `
@@ -811,8 +933,10 @@
         updateFromBalanceHint();
     }
 
-    function valueInFCFA(amount, currency) { return currency === 'FCFA' ? amount : amount * cryptoRates[currency]; }
-    function fromFCFA(amountFCFA, currency) { return currency === 'FCFA' ? amountFCFA : amountFCFA / cryptoRates[currency]; }
+    // Valeur en FCFA de "amount" unités de "currency" si on la VEND (source).
+    function sellValueInFCFA(amount, currency) { return currency === 'FCFA' ? amount : amount * sellRates[currency]; }
+    // Quantité de "currency" obtenue avec "fcfaValue" si on l'ACHÈTE (cible).
+    function buyAmountFromFCFA(fcfaValue, currency) { return currency === 'FCFA' ? fcfaValue : fcfaValue / buyRates[currency]; }
 
     function balanceHintFor(currency) {
         const bal = (window.__balancesCache && window.__balancesCache[currency]) || 0;
@@ -839,7 +963,7 @@
     function updateConvRateLabel() {
         const from = document.getElementById('fromCurrency').value;
         const to = document.getElementById('toCurrency').value;
-        const equiv = fromFCFA(valueInFCFA(1, from), to);
+        const equiv = buyAmountFromFCFA(sellValueInFCFA(1, from), to);
         document.getElementById('convRateLabel').textContent = `1 ${from} ≈ ${equiv.toLocaleString('fr-FR', { maximumFractionDigits: 6 })} ${to}`;
     }
 
@@ -851,10 +975,14 @@
 
         if (direction === 'from') {
             const amount = parseFloat(fromEl.value);
-            toEl.value = !isNaN(amount) ? fromFCFA(valueInFCFA(amount, from), to).toFixed(to === 'FCFA' ? 0 : 6) : '';
+            toEl.value = !isNaN(amount) ? buyAmountFromFCFA(sellValueInFCFA(amount, from), to).toFixed(to === 'FCFA' ? 0 : 6) : '';
         } else {
             const amount = parseFloat(toEl.value);
-            fromEl.value = !isNaN(amount) ? fromFCFA(valueInFCFA(amount, to), from).toFixed(from === 'FCFA' ? 0 : 6) : '';
+            // Sens inverse : on part de la quantité cible désirée pour
+            // remonter au montant source nécessaire — utilise le taux de
+            // vente sur la cible et le taux d'achat sur la source, symétrie
+            // volontaire pour un aperçu cohérent (le serveur recalcule).
+            fromEl.value = !isNaN(amount) ? buyAmountFromFCFA(sellValueInFCFA(amount, to), from).toFixed(from === 'FCFA' ? 0 : 6) : '';
         }
     }
 
@@ -998,13 +1126,13 @@
     }
 
     /* =====================================================================
-       RETRAIT — deux modes : vers un portefeuille externe (crypto) OU
-       vers Mobile Money (FCFA, nouveau).
+       RETRAIT — deux modes : portefeuille externe (crypto) OU Mobile Money
+       (FCFA).
        ===================================================================== */
 
     async function renderWithdraw(preset) {
         const balancesRes = await API.wallet.getBalances();
-        syncRates(balancesRes.rates);
+        syncRates(balancesRes.buyRates, balancesRes.sellRates);
         window.__balancesCache = balancesRes.balances;
 
         const initialMode = preset === 'FCFA' ? 'fcfa' : 'crypto';
@@ -1109,8 +1237,6 @@
         }
     }
 
-    // --- Retrait FCFA vers Mobile Money (nouveau) ---
-
     function renderWithdrawFcfaForm() {
         const bal = (window.__balancesCache && window.__balancesCache.FCFA) || 0;
         document.getElementById('withdrawFormContainer').innerHTML = `
@@ -1197,14 +1323,13 @@
     }
 
     /* =====================================================================
-       PORTEFEUILLE — inclut désormais la carte FCFA
+       PORTEFEUILLE — carte FCFA distincte des cartes crypto.
        ===================================================================== */
 
     async function renderWallet() {
         const balancesRes = await API.wallet.getBalances();
-        syncRates(balancesRes.rates);
+        syncRates(balancesRes.buyRates, balancesRes.sellRates);
         const balances = balancesRes.balances;
-        const totalFCFA = balancesRes.totalFCFA;
 
         const fcfaCardHTML = `
             <div class="wallet-card">
@@ -1222,7 +1347,7 @@
             </div>
         `;
 
-        const cryptoCardsHTML = Object.keys(cryptoRates).map(c => {
+        const cryptoCardsHTML = Object.keys(buyRates).map(c => {
             const amt = balances[c] || 0;
             return `
                 <div class="wallet-card">
@@ -1231,7 +1356,7 @@
                     </div>
                     <div class="wallet-amounts">
                         <div class="amount">${fmtCrypto(amt)} ${c}</div>
-                        <div class="fcfa">≈ ${fmtFCFA(amt * cryptoRates[c])}</div>
+                        <div class="fcfa">≈ ${fmtFCFA(amt * sellRates[c])} (valeur de vente)</div>
                     </div>
                     <div class="wallet-card-actions">
                         <div class="mini-btn" onclick="switchTab('deposer', '${c}')">Déposer</div>
@@ -1244,10 +1369,6 @@
 
         document.getElementById('mainContent').innerHTML = backLink() + `
             <div class="topbar"><h1>Portefeuille</h1></div>
-            <div class="wallet-total">
-                <div class="label">Valeur totale estimée</div>
-                <div class="value">${fmtFCFA(totalFCFA)}</div>
-            </div>
             <div class="wallet-grid">${fcfaCardHTML}${cryptoCardsHTML}</div>
         `;
     }
