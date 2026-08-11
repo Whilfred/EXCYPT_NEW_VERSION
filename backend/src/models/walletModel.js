@@ -1,6 +1,6 @@
 const { query } = require('../config/database');
 
-const CURRENCIES = ['USDT', 'BTC', 'ETH', 'BNB'];
+const CURRENCIES = ['USDT', 'BTC', 'ETH', 'BNB', 'FCFA'];
 
 async function ensureBalances(userId) {
     for (const currency of CURRENCIES) {
@@ -15,12 +15,11 @@ async function ensureBalances(userId) {
 async function getBalances(userId) {
     await ensureBalances(userId);
     const result = await query('SELECT currency, amount FROM balances WHERE user_id = $1', [userId]);
-    const balances = { USDT: 0, BTC: 0, ETH: 0, BNB: 0 };
+    const balances = { USDT: 0, BTC: 0, ETH: 0, BNB: 0, FCFA: 0 };
     result.rows.forEach(row => { balances[row.currency] = parseFloat(row.amount); });
     return balances;
 }
 
-// À utiliser UNIQUEMENT à l'intérieur d'une transaction SQL (client = résultat de pool.connect())
 async function getBalanceForUpdate(client, userId, currency) {
     const result = await client.query(
         'SELECT amount FROM balances WHERE user_id = $1 AND currency = $2 FOR UPDATE',

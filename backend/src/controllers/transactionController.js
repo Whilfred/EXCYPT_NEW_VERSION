@@ -1,15 +1,12 @@
-// backend/src/controllers/transactionController.js
-
 const { pool } = require('../config/database');
 const walletModel = require('../models/walletModel');
 const transactionModel = require('../models/transactionModel');
-const { CRYPTO_RATES, NETWORKS_BY_CRYPTO, isValidCrypto } = require('../utils/rates');
+const {
+    CRYPTO_RATES, NETWORKS_BY_CRYPTO, isValidCrypto,
+    MIN_FCFA_WITHDRAWAL, computeFcfaWithdrawalFee
+} = require('../utils/rates');
 
 console.log('🟢 [transactionController] Chargement du contrôleur');
-
-// ============================================================
-// FONCTIONS EXPORTÉES
-// ============================================================
 
 async function list(req, res) {
     try {
@@ -22,63 +19,41 @@ async function list(req, res) {
     }
 }
 
-// NOTE : cette route ne gère plus que les ventes. Les achats passent
-// exclusivement par /api/payments/sebpay/collect (sebpayController), qui est
-// le seul flux qui crédite le wallet UNIQUEMENT à la confirmation du webhook.
-// Ne pas réintroduire de logique SebPay ici : ça a été la cause du bug où
-// le solde était crédité avant même que le paiement Mobile Money soit validé.
+// Phase 1 (SebPay désactivé) : achat ET vente sont manuels, validés par un
+// admin. La vente débite le wallet immédiatement. L'achat ne crédite JAMAIS
+// ici — uniquement à la confirmation admin (voir confirm()).
 async function trade(req, res) {
-    console.log('🟢 [trade] Début');
-    console.log(`🟢 [trade] Utilisateur ID: ${req.user?.id}`);
-    console.log('🟢 [trade] Body reçu:', req.body);
-
     const { type, crypto, network, phone, country } = req.body;
     const cryptoAmount = parseFloat(req.body.cryptoAmount);
 
-    if (type !== 'vente') {
-        console.log('🔴 [trade] Type non supporté par cette route:', type);
-        return res.status(400).json({
-            error: "Cette route ne gère que les ventes. Pour un achat, utilisez /api/payments/sebpay/collect."
-        });
+    if (!['achat', 'vente'].includes(type)) {
+        return res.status(400).json({ error: 'Type invalide.' });
     }
     if (!isValidCrypto(crypto)) {
-        console.log('🔴 [trade] Crypto invalide:', crypto);
         return res.status(400).json({ error: 'Crypto invalide.' });
     }
     if (!cryptoAmount || cryptoAmount <= 0) {
-        console.log('🔴 [trade] Montant invalide:', cryptoAmount);
         return res.status(400).json({ error: 'Montant invalide.' });
     }
     if (!phone || !network || !country) {
-        console.log('🔴 [trade] Champs manquants - phone:', phone, 'network:', network, 'country:', country);
         return res.status(400).json({ error: 'Réseau, pays et téléphone requis.' });
     }
 
     const fcfaAmount = Math.round(cryptoAmount * CRYPTO_RATES[crypto]);
-    console.log(`🟢 [trade] Taux: ${CRYPTO_RATES[crypto]}, Montant FCFA: ${fcfaAmount}`);
-
     const client = await pool.connect();
-    console.log('🟢 [trade] Connexion DB établie');
 
     try {
         await client.query('BEGIN');
-        console.log('🟢 [trade] Transaction SQL démarrée');
 
-        // Vente : on débite le wallet tout de suite (le crypto quitte le
-        // wallet immédiatement) ; le paiement FCFA au client se fait
-        // manuellement / hors bande, d'où le statut 'en_attente' en attendant
-        // qu'un admin confirme l'envoi du Mobile Money.
-        console.log(`🟢 [trade] Débit du wallet: ${crypto} ${cryptoAmount}`);
-        await walletModel.decrementBalance(client, req.user.id, crypto, cryptoAmount);
+        if (type === 'vente') {
+            await walletModel.decrementBalance(client, req.user.id, crypto, cryptoAmount);
+        }
 
         const tx = await transactionModel.createTransaction(client, req.user.id, {
             type, status: 'en_attente', crypto, cryptoAmount, fcfaAmount, network, phone, country
         });
-        console.log(`🟢 [trade] Transaction créée avec ID: ${tx.id}`);
 
         await client.query('COMMIT');
-        console.log(`✅ [trade] Transaction ${tx.id} committée avec succès`);
-
         res.status(201).json({ success: true, transaction: tx });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -86,12 +61,14 @@ async function trade(req, res) {
         res.status(400).json({ success: false, error: err.message || "Erreur lors de l'opération." });
     } finally {
         client.release();
-        console.log('🟢 [trade] Connexion DB libérée');
     }
 }
 
+// Conversion — gère maintenant le FCFA comme une vraie devise stockée
+// (avant : convertir crypto→FCFA ne créditait rien, et FCFA→crypto créditait
+// de la crypto sans jamais débiter le FCFA. Corrigé : les deux sens
+// débitent/créditent systématiquement, y compris quand FCFA est impliqué).
 async function convert(req, res) {
-    console.log('🟢 [convert] Début');
     const { fromCurrency, toCurrency } = req.body;
     const fromAmount = parseFloat(req.body.fromAmount);
 
@@ -111,6 +88,7 @@ async function convert(req, res) {
         return res.status(400).json({ error: 'Montant invalide.' });
     }
 
+    // Montants toujours recalculés côté serveur à partir des taux serveur.
     const fcfaValue = isFromCrypto ? fromAmount * CRYPTO_RATES[fromCurrency] : fromAmount;
     const toAmount = isToCrypto ? fcfaValue / CRYPTO_RATES[toCurrency] : fcfaValue;
 
@@ -119,12 +97,8 @@ async function convert(req, res) {
     try {
         await client.query('BEGIN');
 
-        if (isFromCrypto) {
-            await walletModel.decrementBalance(client, req.user.id, fromCurrency, fromAmount);
-        }
-        if (isToCrypto) {
-            await walletModel.incrementBalance(client, req.user.id, toCurrency, toAmount);
-        }
+        await walletModel.decrementBalance(client, req.user.id, fromCurrency, fromAmount);
+        await walletModel.incrementBalance(client, req.user.id, toCurrency, toAmount);
 
         const tx = await transactionModel.createTransaction(client, req.user.id, {
             type: 'conversion', status: 'termine', fromCurrency, fromAmount, toCurrency, toAmount
@@ -170,6 +144,7 @@ async function deposit(req, res) {
     }
 }
 
+// Retrait crypto vers un portefeuille externe (blockchain).
 async function withdraw(req, res) {
     const { crypto, network, address } = req.body;
     const amount = parseFloat(req.body.amount);
@@ -206,6 +181,49 @@ async function withdraw(req, res) {
     }
 }
 
+// NOUVEAU : retrait du solde FCFA vers un compte Mobile Money.
+// Le client saisit le montant qu'il veut RECEVOIR ; le total débité de son
+// solde FCFA = montant + frais (voir computeFcfaWithdrawalFee).
+async function withdrawFcfa(req, res) {
+    const { network, phone, country } = req.body;
+    const amount = parseFloat(req.body.amount);
+
+    if (!amount || amount <= 0) {
+        return res.status(400).json({ error: 'Montant invalide.' });
+    }
+    if (amount < MIN_FCFA_WITHDRAWAL) {
+        return res.status(400).json({ error: `Le montant minimum de retrait est de ${MIN_FCFA_WITHDRAWAL} FCFA.` });
+    }
+    if (!phone || !network || !country) {
+        return res.status(400).json({ error: 'Réseau, pays et téléphone requis.' });
+    }
+
+    const feeAmount = computeFcfaWithdrawalFee(amount);
+    const totalDebited = amount + feeAmount;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+        await walletModel.decrementBalance(client, req.user.id, 'FCFA', totalDebited);
+
+        const tx = await transactionModel.createTransaction(client, req.user.id, {
+            type: 'retrait_fcfa', status: 'en_attente',
+            fcfaAmount: amount, feeAmount, network, phone, country
+        });
+
+        await client.query('COMMIT');
+        res.status(201).json({ transaction: tx, feeAmount, totalDebited });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('🔴 [withdrawFcfa] ERREUR:', err.message);
+        res.status(400).json({ error: err.message || 'Erreur lors du retrait FCFA.' });
+    } finally {
+        client.release();
+    }
+}
+
+// Crédite le wallet pour un dépôt OU un achat manuel confirmé par l'admin.
 async function confirm(req, res) {
     const { id } = req.params;
     const client = await pool.connect();
@@ -215,13 +233,15 @@ async function confirm(req, res) {
         const tx = await transactionModel.findByIdForUpdate(client, req.user.id, id);
         if (!tx) throw new Error('Transaction introuvable.');
 
-        if (tx.status !== 'en_attente' && tx.status !== 'en_attente_paiement') {
+        if (tx.status !== 'en_attente') {
             throw new Error('Cette transaction a déjà été traitée.');
         }
 
-        if (tx.type === 'depot' && tx.crypto_amount) {
+        if ((tx.type === 'depot' || tx.type === 'achat') && tx.crypto_amount) {
             await walletModel.incrementBalance(client, req.user.id, tx.crypto, parseFloat(tx.crypto_amount));
         }
+        // retrait / retrait_fcfa / vente : déjà réglés à la création, rien
+        // à créditer ici — confirmer marque juste l'opération comme faite.
 
         const updated = await transactionModel.updateStatus(client, id, 'termine');
         await client.query('COMMIT');
@@ -235,6 +255,8 @@ async function confirm(req, res) {
     }
 }
 
+// Rembourse le wallet pour un retrait crypto, une vente, ou un retrait FCFA
+// annulé (tous débitent le wallet immédiatement à la création).
 async function cancel(req, res) {
     const { id } = req.params;
     const client = await pool.connect();
@@ -244,12 +266,16 @@ async function cancel(req, res) {
         const tx = await transactionModel.findByIdForUpdate(client, req.user.id, id);
         if (!tx) throw new Error('Transaction introuvable.');
 
-        if (tx.status !== 'en_attente' && tx.status !== 'en_attente_paiement') {
+        if (tx.status !== 'en_attente') {
             throw new Error('Cette transaction a déjà été traitée.');
         }
 
-        if (tx.type === 'retrait' && tx.crypto_amount) {
+        if ((tx.type === 'retrait' || tx.type === 'vente') && tx.crypto_amount) {
             await walletModel.incrementBalance(client, req.user.id, tx.crypto, parseFloat(tx.crypto_amount));
+        }
+        if (tx.type === 'retrait_fcfa') {
+            const total = parseFloat(tx.fcfa_amount) + parseFloat(tx.fee_amount || 0);
+            await walletModel.incrementBalance(client, req.user.id, 'FCFA', total);
         }
 
         const updated = await transactionModel.updateStatus(client, id, 'echoue');
@@ -266,4 +292,4 @@ async function cancel(req, res) {
 
 console.log('✅ [transactionController] Toutes les fonctions exportées');
 
-module.exports = { list, trade, convert, deposit, withdraw, confirm, cancel };
+module.exports = { list, trade, convert, deposit, withdraw, withdrawFcfa, confirm, cancel };

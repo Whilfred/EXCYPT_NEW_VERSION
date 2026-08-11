@@ -72,3 +72,17 @@ ALTER TABLE transactions
 CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_provider_tx_id
     ON transactions(provider_transaction_id)
     WHERE provider_transaction_id IS NOT NULL;
+
+-- Migration : ajout du FCFA comme solde natif stocké + retraits FCFA vers
+-- Mobile Money. À exécuter une seule fois sur la base existante.
+
+ALTER TABLE balances DROP CONSTRAINT IF EXISTS balances_currency_check;
+ALTER TABLE balances ADD CONSTRAINT balances_currency_check
+    CHECK (currency IN ('USDT','BTC','ETH','BNB','FCFA'));
+
+ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_type_check;
+ALTER TABLE transactions ADD CONSTRAINT transactions_type_check
+    CHECK (type IN ('achat','vente','conversion','depot','retrait','retrait_fcfa'));
+
+ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS fee_amount NUMERIC(18,2);

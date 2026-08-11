@@ -10,7 +10,7 @@ const walletRoutes = require('./routes/walletRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
-const sebpayRoutes = require('./routes/sebpayRoutes');
+// const sebpayRoutes = require('./routes/sebpayRoutes');
 
 const app = express();
 
@@ -40,7 +40,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/payments/sebpay', sebpayRoutes);
+// app.use('/api/payments/sebpay', sebpayRoutes);
 
 // 404
 app.use((req, res) => {
@@ -53,7 +53,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Erreur interne du serveur.' });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000 || 8080;
 
 app.listen(PORT, () => {
     console.log(`ExCrypt API démarrée sur le port ${PORT}`);
