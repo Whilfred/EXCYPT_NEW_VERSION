@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ExCrypt — Acheter et vendre des cryptomonnaies</title>
+  <meta name="theme-color" content="#17202a">
+  <link rel="manifest" href="./manifest.webmanifest">
   <style>
     :root { --ink:#17202a; --muted:#68727d; --line:#e5e8eb; --paper:#fff; --soft:#f6f7f8; --green:#16845b; --green-dark:#0f6848; }
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -24,6 +26,8 @@
     .btn-outline { background:#fff; border-color:#cfd5db; color:var(--ink); }
     .btn-outline:hover { background:var(--soft); }
     .btn-large { min-height:48px; padding:0 20px; }
+    .install-app[hidden] { display:none; }
+    .install-app { color:var(--green); }
     .hero { padding:92px 0 82px; }
     .hero-grid { display:grid; grid-template-columns:1.05fr .95fr; gap:80px; align-items:center; }
     .eyebrow { color:var(--green); font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:18px; }
@@ -74,7 +78,7 @@
         <a class="nav-link" href="#features">Fonctionnalités</a>
         <a class="nav-link" href="#how-it-works">Comment ça marche</a>
         <a class="nav-link" href="#pricing">Tarifs</a>
-        <div class="nav-actions"><a class="btn btn-outline" href="./pages/login.html">Connexion</a><a class="btn btn-primary" href="./pages/register.html">Créer un compte</a></div>
+        <div class="nav-actions"><button class="btn btn-outline install-app" id="installApp" type="button" hidden>Installer l'application</button><a class="btn btn-outline" href="./pages/login.html">Connexion</a><a class="btn btn-primary" href="./pages/register.html">Créer un compte</a></div>
       </div>
     </div>
   </nav>
@@ -101,5 +105,6 @@
   </main>
   <footer class="footer"><div class="container footer-inner"><div><strong>ExCrypt</strong><br><span>Plateforme crypto sécurisée</span></div><div class="footer-links"><a href="#">À propos</a><a href="#">Support</a><a href="#">Termes</a><a href="#">Confidentialité</a></div><span>© 2026 ExCrypt</span></div></footer>
   <script>const hamburger=document.getElementById('hamburger'),navMenu=document.getElementById('navMenu'); hamburger.addEventListener('click',()=>navMenu.classList.toggle('active')); document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>navMenu.classList.remove('active')));</script>
+  <script src="./js/pwa.js"></script>
 </body>
 </html>
