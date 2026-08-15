@@ -8,104 +8,309 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <style>
-    :root { --ink:#17202a; --muted:#68727d; --line:#e5e8eb; --paper:#fff; --soft:#f6f7f8; --green:#16845b; --green-dark:#0f6848; }
-    * { box-sizing:border-box; margin:0; padding:0; }
-    html { scroll-behavior:smooth; }
-    body { background:var(--paper); color:var(--ink); font-family:Arial,Helvetica,sans-serif; line-height:1.5; }
-    a { color:inherit; text-decoration:none; }
-    .container { width:min(1100px,calc(100% - 40px)); margin:0 auto; }
-    .navbar { background:rgba(255,255,255,.97); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
-    .nav-inner { min-height:70px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
-    .logo { display:inline-flex; align-items:center; gap:10px; font-size:1.05rem; font-weight:700; }
-    .logo-mark { width:30px; height:30px; border-radius:6px; display:grid; place-items:center; background:var(--ink); color:#fff; font-size:.9rem; }
-    .nav-menu { display:flex; align-items:center; gap:24px; color:var(--muted); font-size:.92rem; }
-    .nav-link:hover { color:var(--ink); }
-    .nav-actions { display:flex; align-items:center; gap:10px; }
-    .btn { border:1px solid transparent; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; font-size:.92rem; font-weight:600; cursor:pointer; transition:background .2s,border-color .2s,color .2s; }
-    .btn-primary { background:var(--green); color:#fff; }
-    .btn-primary:hover { background:var(--green-dark); }
-    .btn-outline { background:#fff; border-color:#cfd5db; color:var(--ink); }
-    .btn-outline:hover { background:var(--soft); }
-    .btn-large { min-height:48px; padding:0 20px; }
-    .install-app[hidden] { display:none; }
-    .install-app { color:var(--green); }
-    .hero { padding:92px 0 82px; }
-    .hero-grid { display:grid; grid-template-columns:1.05fr .95fr; gap:80px; align-items:center; }
-    .eyebrow { color:var(--green); font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:18px; }
-    h1 { max-width:600px; font-size:clamp(2.5rem,5vw,4.35rem); line-height:1.05; letter-spacing:-.055em; margin-bottom:22px; }
-    .hero-copy { max-width:540px; color:var(--muted); font-size:1.08rem; margin-bottom:28px; }
-    .hero-actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:34px; }
-    .trust { display:flex; flex-wrap:wrap; gap:22px; border-top:1px solid var(--line); padding-top:20px; color:var(--muted); font-size:.84rem; }
-    .trust strong { display:block; color:var(--ink); font-size:1.1rem; }
-    .wallet { background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:24px; }
-    .wallet-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
-    .wallet-title { font-weight:700; }
-    .status { color:var(--green); font-size:.78rem; font-weight:700; }
-    .balance { background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:14px; }
-    .balance-label { color:var(--muted); font-size:.8rem; }
-    .balance-value { display:block; font-size:1.9rem; font-weight:700; margin-top:4px; }
-    .asset-list { display:grid; gap:8px; margin-bottom:18px; }
-    .asset { background:#fff; border:1px solid var(--line); border-radius:7px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; }
-    .asset-name { font-weight:600; font-size:.9rem; }
-    .asset-symbol { color:var(--muted); font-size:.75rem; margin-left:5px; }
-    .asset-amount { font-size:.88rem; font-weight:600; }
-    .wallet-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .wallet-actions button { min-height:38px; background:#fff; border:1px solid #cfd5db; border-radius:6px; font-weight:600; cursor:pointer; }
-    .wallet-actions button:hover { border-color:var(--green); color:var(--green); }
-    .section { border-top:1px solid var(--line); padding:78px 0; }
-    .section-heading { max-width:590px; margin-bottom:34px; }
-    .section-heading h2 { font-size:clamp(1.8rem,3vw,2.5rem); letter-spacing:-.035em; margin-bottom:10px; }
-    .section-heading p { color:var(--muted); }
-    .features { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
-    .feature { border:1px solid var(--line); border-radius:8px; padding:22px; }
-    .feature-number { color:var(--green); font-size:.8rem; font-weight:700; margin-bottom:24px; }
-    .feature h3 { font-size:1rem; margin-bottom:8px; }
-    .feature p { color:var(--muted); font-size:.9rem; }
-    .footer { border-top:1px solid var(--line); padding:26px 0; color:var(--muted); font-size:.83rem; }
-    .footer-inner { display:flex; align-items:center; justify-content:space-between; gap:20px; }
-    .footer-links { display:flex; flex-wrap:wrap; gap:18px; }
-    .footer-links a:hover { color:var(--ink); }
-    .hamburger { display:none; border:0; background:transparent; font-size:1.4rem; }
-    @media (max-width:850px) { .hero-grid { grid-template-columns:1fr; gap:42px; } .hero { padding:64px 0; } .features { grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:620px) { .container { width:min(100% - 28px,1100px); } .nav-menu { display:none; position:absolute; left:0; right:0; top:70px; background:#fff; border-bottom:1px solid var(--line); padding:18px 14px; flex-direction:column; align-items:stretch; } .nav-menu.active { display:flex; } .nav-actions { flex-direction:column; align-items:stretch; } .hamburger { display:block; } .features { grid-template-columns:1fr; } .footer-inner { flex-direction:column; align-items:flex-start; } h1 { font-size:2.65rem; } }
+    :root { 
+      --ink: #17202a; 
+      --muted: #94a3b8; 
+      --line: rgba(255, 255, 255, 0.15); 
+      --paper: #0b131a; 
+      --card-bg: rgba(18, 28, 38, 0.75);
+      --green: #10b981; 
+      --green-dark: #059669; 
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { 
+      background: var(--paper); 
+      color: #fff; 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      line-height: 1.5; 
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    
+    .container { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+    
+    /* Navbar */
+    .navbar { 
+      background: rgba(11, 19, 26, 0.85); 
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line); 
+      position: sticky; 
+      top: 0; 
+      z-index: 100; 
+    }
+    .nav-inner { min-height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .logo { display: inline-flex; align-items: center; gap: 12px; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+    .logo-mark { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--green); color: #fff; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+    
+    .nav-menu { display: flex; align-items: center; gap: 32px; color: #cbd5e1; font-size: .95rem; font-weight: 500; }
+    .nav-link:hover { color: var(--green); }
+    
+    .nav-actions { display: flex; align-items: center; gap: 14px; }
+    .btn { border: 1px solid transparent; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; font-size: .95rem; font-weight: 600; cursor: pointer; transition: all .25s ease; }
+    .btn-primary { background: var(--accent); color: #111; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3); }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-outline { background: rgba(255, 255, 255, 0.05); border-color: var(--line); color: #fff; }
+    .btn-outline:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
+    .install-app[hidden] { display: none; }
+    
+    /* Hero Section avec style immersif */
+    .hero { 
+      position: relative; 
+      padding: 100px 0 90px; 
+      background: linear-gradient(180deg, rgba(11,19,26,0.5) 0%, rgba(11,19,26,0.95) 100%), url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=1600&auto=format&fit=crop') no-repeat center center/cover;
+    }
+    .hero-badge { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px; 
+      background: rgba(245, 158, 11, 0.1); 
+      border: 1px solid rgba(245, 158, 11, 0.3); 
+      padding: 8px 16px; 
+      border-radius: 50px; 
+      color: var(--accent); 
+      font-size: .8rem; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: .06em; 
+      margin-bottom: 24px; 
+    }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; align-items: center; }
+    
+    h1 { 
+      font-size: clamp(2.8rem, 5vw, 4.5rem); 
+      line-height: 1.08; 
+      letter-spacing: -.03em; 
+      margin-bottom: 20px; 
+      font-weight: 800;
+    }
+    h1 span { color: var(--green); }
+    
+    .hero-copy { color: var(--muted); font-size: 1.15rem; margin-bottom: 36px; max-width: 520px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 40px; }
+    
+    .stats-row { display: flex; gap: 30px; border-top: 1px solid var(--line); padding-top: 24px; }
+    .stat-item { display: flex; flex-direction: column; }
+    .stat-number { font-size: 1.6rem; font-weight: 800; color: #fff; }
+    .stat-label { font-size: 0.85rem; color: var(--muted); }
+
+    /* Wallet card vitrine */
+    .wallet-card { 
+      background: var(--card-bg); 
+      backdrop-filter: blur(16px); 
+      border: 1px solid var(--line); 
+      border-radius: 20px; 
+      padding: 28px; 
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+    }
+    .wallet-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .wallet-title { font-weight: 700; font-size: 1.05rem; }
+    .status-badge { background: rgba(16, 185, 129, 0.15); color: var(--green); padding: 4px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+    
+    .balance-box { background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .balance-label { color: var(--muted); font-size: .85rem; }
+    .balance-value { font-size: 2.2rem; font-weight: 800; margin-top: 4px; color: #fff; }
+    
+    .asset-list { display: grid; gap: 10px; margin-bottom: 20px; }
+    .asset-row { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .asset-name { font-weight: 600; font-size: .95rem; }
+    .asset-symbol { color: var(--muted); font-size: .8rem; margin-left: 6px; }
+    .asset-amount { font-size: .95rem; font-weight: 700; }
+    
+    .wallet-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .wallet-btns button { min-height: 42px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); border-radius: 10px; font-weight: 600; color: #fff; cursor: pointer; transition: all 0.2s; }
+    .wallet-btns button:hover { background: var(--green); border-color: var(--green); color: #fff; }
+
+    /* Sections Générales */
+    .section { border-top: 1px solid var(--line); padding: 90px 0; background: #070d12; }
+    .section-heading { max-width: 600px; margin-bottom: 50px; }
+    .section-heading h2 { font-size: clamp(2rem, 3vw, 2.8rem); font-weight: 800; letter-spacing: -.02em; margin-bottom: 12px; }
+    .section-heading p { color: var(--muted); font-size: 1.05rem; }
+    
+    .features-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .feature-card { background: var(--card-bg); border: 1px solid var(--line); border-radius: 16px; padding: 30px 24px; transition: transform 0.3s; }
+    .feature-card:hover { transform: translateY(-5px); border-color: rgba(16, 185, 129, 0.4); }
+    .feature-number { color: var(--green); font-size: .85rem; font-weight: 800; margin-bottom: 20px; display: inline-block; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 6px; }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 10px; font-weight: 700; }
+    .feature-card p { color: var(--muted); font-size: .92rem; }
+
+    /* Footer */
+    .footer { border-top: 1px solid var(--line); padding: 30px 0; color: var(--muted); font-size: .88rem; background: #05090d; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 24px; }
+    .footer-links a:hover { color: #fff; }
+
+    .hamburger { display: none; border: 0; background: transparent; font-size: 1.6rem; color: #fff; cursor: pointer; }
+
+    /* Responsive */
+    @media (max-width: 900px) { 
+      .hero-grid { grid-template-columns: 1fr; gap: 50px; } 
+      .features-grid { grid-template-columns: repeat(2, 1fr); } 
+    }
+    @media (max-width: 650px) { 
+      .container { width: min(100% - 24px, 1180px); } 
+      .nav-menu { display: none; position: absolute; left: 0; right: 0; top: 80px; background: #0b131a; border-bottom: 1px solid var(--line); padding: 24px; flex-direction: column; align-items: stretch; box-shadow: 0 20px 30px rgba(0,0,0,0.5); } 
+      .nav-menu.active { display: flex; } 
+      .nav-actions { flex-direction: column; align-items: stretch; margin-top: 10px; } 
+      .hamburger { display: block; } 
+      .features-grid { grid-template-columns: 1fr; } 
+      .footer-inner { flex-direction: column; align-items: flex-start; } 
+    }
   </style>
 </head>
 <body>
+
+  <!-- Navigation -->
   <nav class="navbar">
     <div class="container nav-inner">
-      <a class="logo" href="#top"><span class="logo-mark">E</span><span>ExCrypt</span></a>
+      <a class="logo" href="#top">
+        <span class="logo-mark">E</span>
+        <span>ExCrypt</span>
+      </a>
       <button class="hamburger" id="hamburger" aria-label="Ouvrir le menu">☰</button>
       <div class="nav-menu" id="navMenu">
         <a class="nav-link" href="#features">Fonctionnalités</a>
         <a class="nav-link" href="#how-it-works">Comment ça marche</a>
-        <a class="nav-link" href="#pricing">Tarifs</a>
-        <div class="nav-actions"><button class="btn btn-outline install-app" id="installApp" type="button" hidden>Installer l'application</button><a class="btn btn-outline" href="./pages/login.html">Connexion</a><a class="btn btn-primary" href="./pages/register.html">Créer un compte</a></div>
+        <div class="nav-actions">
+          <button class="btn btn-outline install-app" id="installApp" type="button" hidden>Installer l'app</button>
+          <a class="btn btn-outline" href="./pages/login.html">Connexion</a>
+          <a class="btn btn-primary" href="./pages/register.html">Créer un compte</a>
+        </div>
       </div>
     </div>
   </nav>
+
+  <!-- Hero Section -->
   <main id="top">
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow">ExCrypt</div>
-          <h1>Les cryptomonnaies, simplement.</h1>
-          <p class="hero-copy">Achetez, vendez et suivez vos cryptomonnaies en FCFA depuis une plateforme claire et sécurisée.</p>
-          <div class="hero-actions"><a class="btn btn-primary btn-large" href="./pages/dashboard.html">Commencer maintenant</a><a class="btn btn-outline btn-large" href="#how-it-works">En savoir plus</a></div>
-          <div class="trust"><div><strong>50+</strong>Pays utilisateurs</div><div><strong>10K+</strong>Transactions traitées</div><div><strong>6</strong>Cryptos supportées</div></div>
+          <div class="hero-badge">✦ ExCrypt — Le leader crypto en Afrique</div>
+          <h1>Achetez et vendez vos cryptos <span>en toute simplicité.</span></h1>
+          <p class="hero-copy">Gérez, échangez et suivez vos actifs en FCFA instantanément depuis une plateforme ultra-sécurisée, rapide et sans complication.</p>
+          
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-large" href="./pages/register.html">Commencer maintenant</a>
+            <a class="btn btn-outline btn-large" href="./pages/login.html">Se connecter</a>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-item">
+              <span class="stat-number">+50</span>
+              <span class="stat-label">Pays utilisateurs</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">+10K</span>
+              <span class="stat-label">Transactions</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">6</span>
+              <span class="stat-label">Cryptos supportées</span>
+            </div>
+          </div>
         </div>
-        <div class="wallet" aria-label="Aperçu du portefeuille ExCrypt">
-          <div class="wallet-top"><span class="wallet-title">Portefeuille</span><span class="status">Compte sécurisé</span></div>
-          <div class="balance"><span class="balance-label">Solde total</span><span class="balance-value">0,00 FCFA</span></div>
-          <div class="asset-list"><div class="asset"><span class="asset-name">Bitcoin <small class="asset-symbol">BTC</small></span><span class="asset-amount">0,0000</span></div><div class="asset"><span class="asset-name">Ethereum <small class="asset-symbol">ETH</small></span><span class="asset-amount">0,0000</span></div><div class="asset"><span class="asset-name">Tether <small class="asset-symbol">USDT</small></span><span class="asset-amount">0,0000</span></div></div>
-          <div class="wallet-actions"><button>Acheter</button><button>Vendre</button><button>Convertir</button></div>
+
+        <!-- Portefeuille Vitrine -->
+        <div class="wallet-card" aria-label="Aperçu du portefeuille ExCrypt">
+          <div class="wallet-top">
+            <span class="wallet-title">Portefeuille en direct</span>
+            <span class="status-badge">● Sécurisé</span>
+          </div>
+          <div class="balance-box">
+            <span class="balance-label">Solde estimé</span>
+            <span class="balance-value">0,00 FCFA</span>
+          </div>
+          <div class="asset-list">
+            <div class="asset-row">
+              <span class="asset-name">Bitcoin <small class="asset-symbol">BTC</small></span>
+              <span class="asset-amount">0.0000</span>
+            </div>
+            <div class="asset-row">
+              <span class="asset-name">Ethereum <small class="asset-symbol">ETH</small></span>
+              <span class="asset-amount">0.0000</span>
+            </div>
+            <div class="asset-row">
+              <span class="asset-name">Tether <small class="asset-symbol">USDT</small></span>
+              <span class="asset-amount">0.0000</span>
+            </div>
+          </div>
+          <div class="wallet-btns">
+            <button>Acheter</button>
+            <button>Vendre</button>
+            <button>Convertir</button>
+          </div>
         </div>
       </div>
     </section>
-    <section class="section" id="features"><div class="container"><div class="section-heading"><h2>Tout ce qu'il faut, au même endroit.</h2><p>Une interface directe pour gérer vos opérations sans informations superflues.</p></div><div class="features"><article class="feature"><div class="feature-number">01</div><h3>Transactions contrôlées</h3><p>Chaque opération est vérifiée avant d'être finalisée.</p></article><article class="feature"><div class="feature-number">02</div><h3>Mobile Money</h3><p>Utilisez les moyens de paiement que vous connaissez déjà.</p></article><article class="feature"><div class="feature-number">03</div><h3>Conversions</h3><p>Passez d'une cryptomonnaie à l'autre en quelques étapes.</p></article><article class="feature"><div class="feature-number">04</div><h3>Historique lisible</h3><p>Retrouvez vos soldes et vos opérations à tout moment.</p></article></div></div></section>
-    <section class="section" id="how-it-works"><div class="container"><div class="section-heading"><h2>Commencer ne prend que quelques minutes.</h2><p>Créez votre compte, choisissez une opération, puis suivez son état depuis votre portefeuille.</p></div></div></section>
+
+    <!-- Fonctionnalités -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-heading">
+          <h2>Tout ce qu'il vous faut, au même endroit.</h2>
+          <p>Une interface fluide conçue pour aller à l'essentiel et optimiser vos transactions.</p>
+        </div>
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="feature-number">01</div>
+            <h3>Sécurité maximale</h3>
+            <p>Chaque opération fait l'objet de vérifications rigoureuses avant d'être validée.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-number">02</div>
+            <h3>Mobile Money</h3>
+            <p>Effectuez vos règlements via les services de paiement locaux de votre choix.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-number">03</div>
+            <h3>Conversions rapides</h3>
+            <p>Passez d'une cryptomonnaie à une autre en quelques clics seulement.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-number">04</div>
+            <h3>Suivi en temps réel</h3>
+            <p>Gardez un œil constant sur l'évolution de vos soldes et de votre historique.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-it-works" style="background: var(--paper);">
+      <div class="container">
+        <div class="section-heading">
+          <h2>Commencer en quelques minutes.</h2>
+          <p>Inscrivez-vous, sélectionnez votre transaction et pilotez vos fonds directement depuis votre tableau de bord personnel.</p>
+        </div>
+      </div>
+    </section>
   </main>
-  <footer class="footer"><div class="container footer-inner"><div><strong>ExCrypt</strong><br><span>Plateforme crypto sécurisée</span></div><div class="footer-links"><a href="#">À propos</a><a href="#">Support</a><a href="#">Termes</a><a href="#">Confidentialité</a></div><span>© 2026 ExCrypt</span></div></footer>
-  <script>const hamburger=document.getElementById('hamburger'),navMenu=document.getElementById('navMenu'); hamburger.addEventListener('click',()=>navMenu.classList.toggle('active')); document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>navMenu.classList.remove('active')));</script>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong>ExCrypt</strong><br>
+        <span>La plateforme crypto sécurisée</span>
+      </div>
+      <div class="footer-links">
+        <a href="#">À propos</a>
+        <a href="#">Support</a>
+        <a href="#">Termes & Conditions</a>
+        <a href="#">Confidentialité</a>
+      </div>
+      <span>© 2026 ExCrypt</span>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    const hamburger = document.getElementById('hamburger'),
+          navMenu = document.getElementById('navMenu');
+    hamburger.addEventListener('click', () => navMenu.classList.toggle('active'));
+    document.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', () => navMenu.classList.remove('active')));
+  </script>
   <script src="./js/pwa.js"></script>
 </body>
 </html>
