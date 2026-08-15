@@ -1432,12 +1432,15 @@ function setActiveMenus(tabName) {
 async function renderProfil() {
         const res = await API.profile.get();
         const profile = normalizeProfile(res.profile);
-        // const kycMap = {
-        //     non_verifie: { label: 'Non vérifié', badge: 'badge-failed' },
-        //     en_attente: { label: 'Vérification en cours', badge: 'badge-pending' },
-        //     verifie: { label: 'Vérifié', badge: 'badge-done' }
-        // };
-        // const kyc = kycMap[profile.kyc] || kycMap.non_verifie;
+        
+        // Définition des variables de statut KYC
+        const kycMap = {
+            non_verifie: { label: 'Non vérifié', badge: 'badge-failed' },
+            en_attente: { label: 'Vérification en cours', badge: 'badge-pending' },
+            verifie: { label: 'Vérifié', badge: 'badge-done' }
+        };
+        const kyc = kycMap[profile.kyc] || kycMap.non_verifie;
+        
         const initial = (profile.firstName || '?').charAt(0).toUpperCase();
 
         document.getElementById('mainContent').innerHTML = backLink() + `
@@ -1486,7 +1489,6 @@ async function renderProfil() {
                         <button type="submit" class="btn-submit" id="profileSubmitBtn">Enregistrer les modifications</button>
                     </form>
                     
-                    <!-- Bouton de redirection vers les paramètres -->
                     <button class="btn-secondary" style="margin-top: 10px;" onclick="switchTab('parametres')">⚙️ Gérer les paramètres du compte</button>
                 </div>
             </div>
@@ -1494,7 +1496,7 @@ async function renderProfil() {
         document.getElementById('country').value = profile.country || 'Burkina Faso';
         document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
     }
-
+    
     async function handleProfileSubmit(event) {
         event.preventDefault();
         const btn = document.getElementById('profileSubmitBtn');
