@@ -1485,8 +1485,6 @@ async function renderProfil() {
 
                         <button type="submit" class="btn-submit" id="profileSubmitBtn">Enregistrer les modifications</button>
                     </form>
-
-                    ${profile.kyc !== 'verifie' ? `<button class="btn-secondary" onclick="startKyc()">Lancer la vérification d'identité (KYC)</button>` : ''}
                     
                     <!-- Bouton de redirection vers les paramètres -->
                     <button class="btn-secondary" style="margin-top: 10px;" onclick="switchTab('parametres')">⚙️ Gérer les paramètres du compte</button>
@@ -1519,13 +1517,13 @@ async function renderProfil() {
         }
     }
 
-    async function startKyc() {
-        try {
-            await API.profile.startKyc();
-            showToast("Vérification d'identité lancée");
-            renderProfil();
-        } catch (e) { showToast(e.message); }
-    }
+    // async function startKyc() {
+    //     try {
+    //         await API.profile.startKyc();
+    //         showToast("Vérification d'identité lancée");
+    //         renderProfil();
+    //     } catch (e) { showToast(e.message); }
+    // }
 
     /* =====================================================================
        PARAMÈTRES
