@@ -597,12 +597,7 @@ function setActiveMenus(tabName) {
             amount = '-' + fmtFCFA(total);
         }
 
-        const actions = tx.status === 'en_attente'
-            ? `<div class="tx-actions">
-                    ${['depot', 'achat', 'retrait', 'retrait_fcfa'].includes(tx.type) ? `<button onclick="onConfirmTx('${tx.id}')">Confirmer</button>` : ''}
-                    <button onclick="onCancelTx('${tx.id}')">Annuler</button>
-               </div>`
-            : '';
+        const actions = '';
 
         return `
             <div class="tx-item">
