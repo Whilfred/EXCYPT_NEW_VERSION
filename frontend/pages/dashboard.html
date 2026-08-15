@@ -231,26 +231,31 @@
         </main>
     </div>
 
-    <nav class="bottom-nav">
-        <ul>
-            <li class="active" onclick="switchTab('dashboard')">
-                <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-                Accueil
-            </li>
-            <li onclick="switchTab('portefeuille')">
-                <svg class="icon" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/><circle cx="17" cy="14" r="1"/></svg>
-                Portefeuille
-            </li>
-            <li onclick="switchTab('transactions')">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
-                Historique
-            </li>
-            <li onclick="switchTab('profil')">
-                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
-                Profil
-            </li>
-        </ul>
-    </nav>
+<nav class="bottom-nav">
+    <ul>
+        <li class="active" onclick="switchTab('dashboard')">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            Accueil
+        </li>
+        <li onclick="switchTab('portefeuille')">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/><circle cx="17" cy="14" r="1"/></svg>
+            Portefeuille
+        </li>
+        <li onclick="switchTab('transactions')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
+            Historique
+        </li>
+        <li onclick="switchTab('profil')">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
+            Profil
+        </li>
+        <li onclick="switchTab('parametres')">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0l2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Réglages
+        </li>
+    </ul>
+</nav>
+
 
     <div class="toast" id="toast"></div>
 
@@ -414,14 +419,14 @@
         }
     }
 
-    function setActiveMenus(tabName) {
+function setActiveMenus(tabName) {
         const map = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'profil': 3, 'parametres': 4 };
         const index = map[tabName] !== undefined ? map[tabName] : 0;
 
         const sidebarItems = document.querySelectorAll('.sidebar-menu li:not(.logout)');
         if (sidebarItems[index]) sidebarItems[index].classList.add('active');
 
-        const bottomMap = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'profil': 3 };
+        const bottomMap = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'profil': 3, 'parametres': 4 };
         const bottomItems = document.querySelectorAll('.bottom-nav li');
         if (bottomMap[tabName] !== undefined && bottomItems[bottomMap[tabName]]) {
             bottomItems[bottomMap[tabName]].classList.add('active');
@@ -1418,7 +1423,7 @@
        PROFIL
        ===================================================================== */
 
-    async function renderProfil() {
+async function renderProfil() {
         const res = await API.profile.get();
         const profile = normalizeProfile(res.profile);
         const kycMap = {
@@ -1476,6 +1481,9 @@
                     </form>
 
                     ${profile.kyc !== 'verifie' ? `<button class="btn-secondary" onclick="startKyc()">Lancer la vérification d'identité (KYC)</button>` : ''}
+                    
+                    <!-- Bouton de redirection vers les paramètres -->
+                    <button class="btn-secondary" style="margin-top: 10px;" onclick="switchTab('parametres')">⚙️ Gérer les paramètres du compte</button>
                 </div>
             </div>
         `;
