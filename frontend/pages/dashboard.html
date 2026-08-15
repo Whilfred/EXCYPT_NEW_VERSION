@@ -1433,14 +1433,6 @@ async function renderProfil() {
         const res = await API.profile.get();
         const profile = normalizeProfile(res.profile);
         
-        // Définition des variables de statut KYC
-        const kycMap = {
-            non_verifie: { label: 'Non vérifié', badge: 'badge-failed' },
-            en_attente: { label: 'Vérification en cours', badge: 'badge-pending' },
-            verifie: { label: 'Vérifié', badge: 'badge-done' }
-        };
-        const kyc = kycMap[profile.kyc] || kycMap.non_verifie;
-        
         const initial = (profile.firstName || '?').charAt(0).toUpperCase();
 
         document.getElementById('mainContent').innerHTML = backLink() + `
@@ -1451,7 +1443,6 @@ async function renderProfil() {
                 <div>
                     <div class="profile-name">${profile.firstName || ''} ${profile.lastName || ''}</div>
                     <div class="profile-email">${profile.email || 'Aucun e-mail renseigné'}</div>
-                    <span class="badge ${kyc.badge}" style="margin-top:6px;">Statut KYC : ${kyc.label}</span>
                 </div>
             </div>
 
