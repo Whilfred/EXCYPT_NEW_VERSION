@@ -597,29 +597,29 @@ function setActiveMenus(tabName) {
             amount = '-' + fmtFCFA(total);
         }
 
-        const actions = tx.status === 'en_attente'
-            ? `<div class="tx-actions">
-                    ${['depot', 'achat', 'retrait', 'retrait_fcfa'].includes(tx.type) ? `<button onclick="onConfirmTx('${tx.id}')">Confirmer</button>` : ''}
-                    <button onclick="onCancelTx('${tx.id}')">Annuler</button>
-               </div>`
-            : '';
+        // const actions = tx.status === 'en_attente'
+        //     ? `<div class="tx-actions">
+        //             ${['depot', 'achat', 'retrait', 'retrait_fcfa'].includes(tx.type) ? `<button onclick="onConfirmTx('${tx.id}')">Confirmer</button>` : ''}
+        //             <button onclick="onCancelTx('${tx.id}')">Annuler</button>
+        //        </div>`
+        //     : '';
 
-        return `
-            <div class="tx-item">
-                <div class="tx-left">
-                    <div class="tx-icon"><svg class="icon" viewBox="0 0 24 24">${txIconSvg(tx.type)}</svg></div>
-                    <div>
-                        <div class="tx-title">${title}</div>
-                        <div class="tx-sub">${sub}</div>
-                    </div>
-                </div>
-                <div class="tx-right">
-                    <span class="badge ${STATUS_BADGE[tx.status]}">${STATUS_LABELS[tx.status]}</span>
-                    <div class="tx-amount">${amount}</div>
-                    ${actions}
-                </div>
-            </div>
-        `;
+        // return `
+        //     <div class="tx-item">
+        //         <div class="tx-left">
+        //             <div class="tx-icon"><svg class="icon" viewBox="0 0 24 24">${txIconSvg(tx.type)}</svg></div>
+        //             <div>
+        //                 <div class="tx-title">${title}</div>
+        //                 <div class="tx-sub">${sub}</div>
+        //             </div>
+        //         </div>
+        //         <div class="tx-right">
+        //             <span class="badge ${STATUS_BADGE[tx.status]}">${STATUS_LABELS[tx.status]}</span>
+        //             <div class="tx-amount">${amount}</div>
+        //             ${actions}
+        //         </div>
+        //     </div>
+        // `;
     }
 
     async function onConfirmTx(id) {
