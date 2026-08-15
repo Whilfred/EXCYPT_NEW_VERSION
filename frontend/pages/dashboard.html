@@ -1432,12 +1432,12 @@ function setActiveMenus(tabName) {
 async function renderProfil() {
         const res = await API.profile.get();
         const profile = normalizeProfile(res.profile);
-        const kycMap = {
-            non_verifie: { label: 'Non vérifié', badge: 'badge-failed' },
-            en_attente: { label: 'Vérification en cours', badge: 'badge-pending' },
-            verifie: { label: 'Vérifié', badge: 'badge-done' }
-        };
-        const kyc = kycMap[profile.kyc] || kycMap.non_verifie;
+        // const kycMap = {
+        //     non_verifie: { label: 'Non vérifié', badge: 'badge-failed' },
+        //     en_attente: { label: 'Vérification en cours', badge: 'badge-pending' },
+        //     verifie: { label: 'Vérifié', badge: 'badge-done' }
+        // };
+        // const kyc = kycMap[profile.kyc] || kycMap.non_verifie;
         const initial = (profile.firstName || '?').charAt(0).toUpperCase();
 
         document.getElementById('mainContent').innerHTML = backLink() + `
