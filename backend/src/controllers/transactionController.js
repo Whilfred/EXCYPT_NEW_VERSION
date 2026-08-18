@@ -19,15 +19,24 @@ async function list(req, res) {
     }
 }
 
-// Achat : crédite UNIQUEMENT le compte crypto, au taux d'achat, à la
-// confirmation admin (voir confirm()). Le compte FCFA n'est jamais touché
-// (le paiement se fait en Mobile Money, hors du solde interne). Le client
-// indique une adresse + un réseau blockchain de réception.
-// Vente : débite le compte crypto immédiatement, au taux de VENTE
-// (différent, plus bas — spread de la plateforme).
+// ================================================================
+// TRADE : Achat et Vente
+// ================================================================
+
 async function trade(req, res) {
+    console.log('📥 [trade] Requête reçue:', req.body);
+
     const { type, crypto, network, phone, country, address, cryptoNetwork } = req.body;
-    const cryptoAmount = parseFloat(req.body.cryptoAmount);
+    
+    // Récupérer les montants
+    let cryptoAmount = parseFloat(req.body.cryptoAmount);
+    let fcfaAmount = parseFloat(req.body.fcfaAmount);
+    
+    console.log(`📊 [trade] Type: ${type}, Crypto: ${crypto}, CryptoAmount: ${cryptoAmount}, FCFA: ${fcfaAmount}`);
+
+    // ================================================================
+    // VALIDATIONS COMMUNES
+    // ================================================================
 
     if (!['achat', 'vente'].includes(type)) {
         return res.status(400).json({ error: 'Type invalide.' });
@@ -35,53 +44,179 @@ async function trade(req, res) {
     if (!isValidCrypto(crypto)) {
         return res.status(400).json({ error: 'Crypto invalide.' });
     }
-    if (!cryptoAmount || cryptoAmount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide 1.' });
-    }
     if (!phone || !network || !country) {
         return res.status(400).json({ error: 'Réseau, pays et téléphone requis.' });
     }
+
+    // ================================================================
+    // TRAITEMENT ACHAT
+    // ================================================================
+
     if (type === 'achat') {
+        // Le client envoie fcfaAmount (le montant qu'il veut investir)
+        if (!fcfaAmount || fcfaAmount <= 0 || isNaN(fcfaAmount)) {
+            return res.status(400).json({ error: 'Montant FCFA invalide.' });
+        }
+
+        // Vérifications pour l'achat
         if (!address) {
             return res.status(400).json({ error: 'Adresse de réception requise.' });
         }
         if (!cryptoNetwork || !NETWORKS_BY_CRYPTO[crypto].includes(cryptoNetwork)) {
             return res.status(400).json({ error: 'Réseau blockchain invalide pour cette crypto.' });
         }
-    }
 
-    const rate = type === 'achat' ? CRYPTO_BUY_RATES[crypto] : CRYPTO_SELL_RATES[crypto];
-    const fcfaAmount = Math.round(cryptoAmount * rate);
-    const client = await pool.connect();
+        const buyRate = CRYPTO_BUY_RATES[crypto];
+        
+        // 1. Frais de service (4% du montant saisi)
+        const serviceFee = fcfaAmount * 0.04;
+        const totalAPayer = fcfaAmount + serviceFee;
 
-    try {
-        await client.query('BEGIN');
+        // 2. Conversion en USDT
+        const usdtBrut = totalAPayer / buyRate;
 
-        if (type === 'vente') {
-            await walletModel.decrementBalance(client, req.user.id, crypto, cryptoAmount);
+        // 3. Frais de réseau (1.5 USDT)
+        const networkFeeCrypto = 1.5;
+        const cryptoAmountNet = usdtBrut - networkFeeCrypto;
+
+        // 4. Vérifier que le montant est positif
+        if (cryptoAmountNet <= 0) {
+            const minAmount = Math.ceil((networkFeeCrypto * buyRate) / 0.96 + 500);
+            return res.status(400).json({ 
+                error: `Montant insuffisant. Minimum recommandé : ${minAmount.toLocaleString('fr-FR')} FCFA.`
+            });
         }
 
-        const tx = await transactionModel.createTransaction(client, req.user.id, {
-            type, status: 'en_attente', crypto, cryptoAmount, fcfaAmount, network, phone, country,
-            address: type === 'achat' ? address : null,
-            cryptoNetwork: type === 'achat' ? cryptoNetwork : null
-        });
+        console.log(`📊 [achat] ${fcfaAmount} FCFA → ${cryptoAmountNet.toFixed(6)} ${crypto}`);
 
-        await client.query('COMMIT');
-        res.status(201).json({ success: true, transaction: tx });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('🔴 [trade] ERREUR:', err.message);
-        res.status(400).json({ success: false, error: err.message || "Erreur lors de l'opération." });
-    } finally {
-        client.release();
+        // Stocker le cryptoAmount final
+        cryptoAmount = cryptoAmountNet;
+
+        // Calculer le montant des frais en FCFA pour la base de données
+        const feeAmountFcfa = Math.round(serviceFee);
+
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            const tx = await transactionModel.createTransaction(client, req.user.id, {
+                type: 'achat',
+                status: 'en_attente',
+                crypto,
+                cryptoAmount: cryptoAmountNet,
+                fcfaAmount: totalAPayer,  // Total à payer
+                feeAmount: feeAmountFcfa,
+                network,
+                phone,
+                country,
+                address,
+                cryptoNetwork
+            });
+
+            await client.query('COMMIT');
+            
+            console.log('✅ [achat] Transaction créée:', tx.id);
+            
+            res.status(201).json({
+                success: true,
+                transaction: tx,
+                quote: {
+                    montantSaisi: fcfaAmount,
+                    serviceFee: Math.round(serviceFee),
+                    totalAPayer: Math.round(totalAPayer),
+                    cryptoAmount: cryptoAmountNet,
+                    crypto,
+                    buyRate,
+                    networkFeeCrypto
+                }
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('🔴 [achat] ERREUR:', err.message);
+            res.status(400).json({ 
+                success: false, 
+                error: err.message || "Erreur lors de l'achat." 
+            });
+        } finally {
+            client.release();
+        }
+    }
+
+    // ================================================================
+    // TRAITEMENT VENTE
+    // ================================================================
+
+    if (type === 'vente') {
+        // Le client envoie cryptoAmount (la quantité de crypto qu'il vend)
+        if (!cryptoAmount || cryptoAmount <= 0 || isNaN(cryptoAmount)) {
+            return res.status(400).json({ error: 'Montant crypto invalide.' });
+        }
+
+        const sellRate = CRYPTO_SELL_RATES[crypto];
+
+        // 1. Valeur brute en FCFA
+        const grossFcfa = cryptoAmount * sellRate;
+
+        // 2. Frais de service (2%)
+        const serviceFee = grossFcfa * 0.02;
+        const netFcfa = grossFcfa - serviceFee;
+
+        console.log(`📊 [vente] ${cryptoAmount} ${crypto} → ${netFcfa} FCFA`);
+
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            // Débiter le compte crypto
+            await walletModel.decrementBalance(client, req.user.id, crypto, cryptoAmount);
+
+            const tx = await transactionModel.createTransaction(client, req.user.id, {
+                type: 'vente',
+                status: 'en_attente',
+                crypto,
+                cryptoAmount,
+                fcfaAmount: Math.round(netFcfa),
+                feeAmount: Math.round(serviceFee),
+                network,
+                phone,
+                country
+            });
+
+            await client.query('COMMIT');
+            
+            console.log('✅ [vente] Transaction créée:', tx.id);
+            
+            res.status(201).json({
+                success: true,
+                transaction: tx,
+                quote: {
+                    cryptoAmount,
+                    grossFcfa: Math.round(grossFcfa),
+                    serviceFee: Math.round(serviceFee),
+                    netFcfa: Math.round(netFcfa),
+                    crypto,
+                    sellRate
+                }
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('🔴 [vente] ERREUR:', err.message);
+            res.status(400).json({ 
+                success: false, 
+                error: err.message || "Erreur lors de la vente." 
+            });
+        } finally {
+            client.release();
+        }
     }
 }
 
-// Conversion — le FCFA et les cryptos sont deux comptes distincts,
-// débités/crédités au bon taux selon le sens : vendre une crypto (source)
-// utilise le taux de VENTE, acheter une crypto (destination) utilise le
-// taux d'ACHAT. FCFA↔FCFA n'a pas de taux (1:1).
+// ================================================================
+// CONVERSION
+// ================================================================
+
 async function convert(req, res) {
     const { fromCurrency, toCurrency } = req.body;
     const fromAmount = parseFloat(req.body.fromAmount);
@@ -98,12 +233,12 @@ async function convert(req, res) {
     if (fromCurrency === toCurrency) {
         return res.status(400).json({ error: 'Choisissez deux devises différentes.' });
     }
-    if (!fromAmount || fromAmount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide. 2 ' });
+    if (!fromAmount || fromAmount <= 0 || isNaN(fromAmount)) {
+        return res.status(400).json({ error: 'Montant invalide.' });
     }
 
     // On "vend" fromCurrency (taux de vente si crypto) puis on "achète"
-    // toCurrency (taux d'achat si crypto) — recalculé côté serveur.
+    // toCurrency (taux d'achat si crypto)
     const fcfaValue = isFromCrypto ? fromAmount * CRYPTO_SELL_RATES[fromCurrency] : fromAmount;
     const toAmount = isToCrypto ? fcfaValue / CRYPTO_BUY_RATES[toCurrency] : fcfaValue;
 
@@ -116,7 +251,12 @@ async function convert(req, res) {
         await walletModel.incrementBalance(client, req.user.id, toCurrency, toAmount);
 
         const tx = await transactionModel.createTransaction(client, req.user.id, {
-            type: 'conversion', status: 'termine', fromCurrency, fromAmount, toCurrency, toAmount
+            type: 'conversion',
+            status: 'termine',
+            fromCurrency,
+            fromAmount,
+            toCurrency,
+            toAmount
         });
 
         await client.query('COMMIT');
@@ -129,6 +269,10 @@ async function convert(req, res) {
         client.release();
     }
 }
+
+// ================================================================
+// DÉPÔT
+// ================================================================
 
 async function deposit(req, res) {
     const { crypto, network, txId } = req.body;
@@ -146,7 +290,12 @@ async function deposit(req, res) {
     try {
         await client.query('BEGIN');
         const tx = await transactionModel.createTransaction(client, req.user.id, {
-            type: 'depot', status: 'en_attente', crypto, cryptoAmount: amount, network, txId
+            type: 'depot',
+            status: 'en_attente',
+            crypto,
+            cryptoAmount: amount,
+            network,
+            txId
         });
         await client.query('COMMIT');
         res.status(201).json({ transaction: tx });
@@ -158,6 +307,10 @@ async function deposit(req, res) {
         client.release();
     }
 }
+
+// ================================================================
+// RETRAIT CRYPTO
+// ================================================================
 
 async function withdraw(req, res) {
     const { crypto, network, address } = req.body;
@@ -172,8 +325,8 @@ async function withdraw(req, res) {
     if (!address) {
         return res.status(400).json({ error: 'Adresse de destination requise.' });
     }
-    if (!amount || amount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide. 3' });
+    if (!amount || amount <= 0 || isNaN(amount)) {
+        return res.status(400).json({ error: 'Montant invalide.' });
     }
 
     const client = await pool.connect();
@@ -182,7 +335,12 @@ async function withdraw(req, res) {
         await client.query('BEGIN');
         await walletModel.decrementBalance(client, req.user.id, crypto, amount);
         const tx = await transactionModel.createTransaction(client, req.user.id, {
-            type: 'retrait', status: 'en_attente', crypto, cryptoAmount: amount, network, address
+            type: 'retrait',
+            status: 'en_attente',
+            crypto,
+            cryptoAmount: amount,
+            network,
+            address
         });
         await client.query('COMMIT');
         res.status(201).json({ transaction: tx });
@@ -195,12 +353,16 @@ async function withdraw(req, res) {
     }
 }
 
+// ================================================================
+// RETRAIT FCFA (Mobile Money)
+// ================================================================
+
 async function withdrawFcfa(req, res) {
     const { network, phone, country } = req.body;
     const amount = parseFloat(req.body.amount);
 
-    if (!amount || amount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide. 4' });
+    if (!amount || amount <= 0 || isNaN(amount)) {
+        return res.status(400).json({ error: 'Montant invalide.' });
     }
     if (amount < MIN_FCFA_WITHDRAWAL) {
         return res.status(400).json({ error: `Le montant minimum de retrait est de ${MIN_FCFA_WITHDRAWAL} FCFA.` });
@@ -219,8 +381,13 @@ async function withdrawFcfa(req, res) {
         await walletModel.decrementBalance(client, req.user.id, 'FCFA', totalDebited);
 
         const tx = await transactionModel.createTransaction(client, req.user.id, {
-            type: 'retrait_fcfa', status: 'en_attente',
-            fcfaAmount: amount, feeAmount, network, phone, country
+            type: 'retrait_fcfa',
+            status: 'en_attente',
+            fcfaAmount: amount,
+            feeAmount,
+            network,
+            phone,
+            country
         });
 
         await client.query('COMMIT');
@@ -233,6 +400,10 @@ async function withdrawFcfa(req, res) {
         client.release();
     }
 }
+
+// ================================================================
+// CONFIRMER UNE TRANSACTION (Admin)
+// ================================================================
 
 async function confirm(req, res) {
     const { id } = req.params;
@@ -262,6 +433,10 @@ async function confirm(req, res) {
         client.release();
     }
 }
+
+// ================================================================
+// ANNULER UNE TRANSACTION (Admin)
+// ================================================================
 
 async function cancel(req, res) {
     const { id } = req.params;
