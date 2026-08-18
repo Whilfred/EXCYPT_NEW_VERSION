@@ -57,7 +57,6 @@
         .stat-value { font-size: 22px; font-weight: 700; }
         .stat-sub { font-size: 12px; color: var(--green); font-weight: 600; }
 
-        /* Actions grid corrigée pour éviter les débordements sur mobile */
         .actions-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 32px; }
         .action-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: border-color 0.2s, transform 0.1s; text-align: center; }
         .action-card:hover { border-color: var(--text); transform: translateY(-2px); }
@@ -103,6 +102,14 @@
 
         .warning-box { font-size: 12px; color: var(--red); background: rgba(207, 48, 74, 0.08); border: 1px solid rgba(207, 48, 74, 0.25); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5; }
         .info-box { font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5; }
+
+        .fee-breakdown { font-size: 12.5px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 4px 14px; margin-bottom: 16px; }
+        .fee-breakdown:empty { display: none; }
+        .fee-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; gap: 10px; }
+        .fee-row + .fee-row { border-top: 1px solid var(--border); }
+        .fee-row span:last-child { font-weight: 600; color: var(--text); text-align: right; }
+        .fee-row.total span { color: var(--green); }
+        .fee-row.error { color: var(--red); padding: 10px 0; }
 
         .wallet-total { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
         .wallet-total .label { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
@@ -175,11 +182,29 @@
         .bottom-nav li { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); font-size: 11px; cursor: pointer; padding: 4px 8px; }
         .bottom-nav li.active { color: var(--text); font-weight: 600; }
 
+        .profit-badge {
+            background: var(--green);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .min-amount-warning {
+            color: var(--red);
+            font-size: 11px;
+            margin-top: 4px;
+            padding: 6px 10px;
+            background: rgba(207, 48, 74, 0.08);
+            border-radius: 6px;
+            border: 1px solid rgba(207, 48, 74, 0.15);
+        }
+
         @media (max-width: 900px) {
             .sidebar { display: none; }
             .main { margin-left: 0; padding: 16px 12px 85px; max-width: 100%; }
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-            /* Ajustement pour mobile : 3 colonnes pour les boutons d'action rapide afin d'éviter le débordement */
             .actions-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
             .wallet-grid { grid-template-columns: 1fr; }
             .bottom-nav { display: block; }
@@ -260,7 +285,6 @@
             <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
             Profil
         </li>
-        <!-- Élément paramètres ajouté ici pour le mobile avec la classe mobile-hide -->
         <li onclick="switchTab('parametres')" class="mobile-hide">
             <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0l2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Réglages
@@ -271,13 +295,12 @@
     <div class="toast" id="toast"></div>
 
     <script>
-    /* =====================================================================
-       Deux comptes distincts (FCFA et crypto). Taux d'achat et de vente
-       différents (spread). Achat crédite le compte crypto au taux d'achat
-       (à la confirmation), sans jamais toucher le FCFA. Vente débite le
-       compte crypto immédiatement au taux de vente. Conversion débite/
-       crédite les deux comptes concernés, avec le même principe de spread.
-       ===================================================================== */
+    /* ================================================================
+       VERSION MANUELLE (SANS SEBPAY)
+       - Frais de service : 4% (achat) / 2% (vente)
+       - Frais de réseau : 1.5 USDT (fixe)
+       - Paiement Mobile Money manuel
+       ================================================================ */
 
     const paymentNetworks = {
         "Burkina Faso": ["Orange Money BF", "Moov Africa BF", "Coris Money"],
@@ -290,9 +313,9 @@
         "Guinée": ["Orange Money GN", "MTN Money GN"]
     };
 
-    // Taux par défaut (avant premier chargement) — synchronisés via syncRates().
+    // TAUX
     let buyRates = { USDT: 592, BTC: 35000000, ETH: 2200000, BNB: 350000 };
-    let sellRates = { USDT: 566, BTC: 33462838, ETH: 2103378, BNB: 334628 };
+    let sellRates = { USDT: 593, BTC: 35000000, ETH: 2200000, BNB: 350000 };
 
     const blockchainNetworks = {
         USDT: ["TRC20 (Tron)", "ERC20 (Ethereum)", "BEP20 (BNB Smart Chain)"],
@@ -316,6 +339,16 @@
 
     const FCFA_WITHDRAWAL_FEE_PERCENT = 1.5;
     const FCFA_WITHDRAWAL_MIN_FEE = 100;
+
+    const CONFIG = {
+        buyServiceFeePercent: 4,
+        sellServiceFeePercent: 2,
+        networkFeeUSDT: 1.5,
+    };
+
+    // ================================================================
+    // FONCTIONS UTILITAIRES
+    // ================================================================
 
     function normalizeTx(tx) {
         return {
@@ -405,9 +438,9 @@
         }
     }
 
-    /* =====================================================================
-       NAVIGATION
-       ===================================================================== */
+    // ================================================================
+    // NAVIGATION
+    // ================================================================
 
     async function switchTab(tabName, presetCrypto) {
         document.querySelectorAll('.sidebar-menu li, .bottom-nav li').forEach(el => el.classList.remove('active'));
@@ -416,8 +449,8 @@
 
         try {
             if (tabName === 'dashboard') { setActiveMenus('dashboard'); await renderDashboard(); }
-            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderTradeForm('achat'); }
-            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderTradeForm('vente'); }
+            else if (tabName === 'acheter') { setActiveMenus('dashboard'); await renderAchatForm(); }
+            else if (tabName === 'vendre') { setActiveMenus('dashboard'); await renderVenteForm(); }
             else if (tabName === 'convertir') { setActiveMenus('dashboard'); await renderConvert(); }
             else if (tabName === 'deposer') { setActiveMenus('dashboard'); await renderDeposit(presetCrypto); }
             else if (tabName === 'retirer') { setActiveMenus('dashboard'); await renderWithdraw(presetCrypto); }
@@ -430,7 +463,7 @@
         }
     }
 
-function setActiveMenus(tabName) {
+    function setActiveMenus(tabName) {
         const map = { 'dashboard': 0, 'portefeuille': 1, 'transactions': 2, 'profil': 3, 'parametres': 4 };
         const index = map[tabName] !== undefined ? map[tabName] : 0;
 
@@ -460,10 +493,9 @@ function setActiveMenus(tabName) {
         }
     }
 
-    /* =====================================================================
-       TABLEAU DE BORD — deux stats distinctes : solde FCFA seul, et total
-       crypto seul (pas de fusion en un chiffre unique).
-       ===================================================================== */
+    // ================================================================
+    // TABLEAU DE BORD
+    // ================================================================
 
     async function renderDashboard() {
         const [balancesRes, txRes, meRes] = await Promise.all([
@@ -597,8 +629,6 @@ function setActiveMenus(tabName) {
             amount = '-' + fmtFCFA(total);
         }
 
-        const actions = '';
-
         return `
             <div class="tx-item">
                 <div class="tx-left">
@@ -611,82 +641,88 @@ function setActiveMenus(tabName) {
                 <div class="tx-right">
                     <span class="badge ${STATUS_BADGE[tx.status]}">${STATUS_LABELS[tx.status]}</span>
                     <div class="tx-amount">${amount}</div>
-                    ${actions}
                 </div>
             </div>
         `;
     }
 
-    async function onConfirmTx(id) {
-        try {
-            await API.transactions.confirm(id);
-            showToast("Transaction confirmée");
-            refreshCurrentTab();
-        } catch (e) { handleApiError(e); }
-    }
-
-    async function onCancelTx(id) {
-        if (!confirm("Annuler cette transaction ?")) return;
-        try {
-            await API.transactions.cancel(id);
-            showToast("Transaction annulée");
-            refreshCurrentTab();
-        } catch (e) { handleApiError(e); }
-    }
-
-    /* =====================================================================
-       ACHAT — crédite le compte crypto au taux d'achat, ne touche jamais
-       le FCFA. Le client indique une adresse + un réseau blockchain.
-       ===================================================================== */
-
-    async function renderTradeForm(type) {
-        if (type === 'achat') return renderAchatForm();
-        return renderVenteForm();
-    }
+    // ================================================================
+    // FORMULAIRE ACHAT (MANUEL)
+    // ================================================================
 
     async function renderAchatForm() {
-        document.getElementById('mainContent').innerHTML = backLink() + `
+        const mainContent = document.getElementById('mainContent');
+        
+        const minAmount = Math.ceil((CONFIG.networkFeeUSDT * buyRates.USDT) / (1 - CONFIG.buyServiceFeePercent / 100) + 500);
+        
+        mainContent.innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
                     <div class="section-header-flex" style="margin-bottom: 20px;">
                         <h3>Acheter de la crypto</h3>
+                        <span class="profit-badge">💰 Frais inclus</span>
                     </div>
                     <div class="rate-info">
-                        <span>Taux d'achat :</span> <span id="rateLabel">1 USDT = 592 FCFA</span>
+                        <span>Taux d'achat :</span> 
+                        <span id="rateLabel">1 USDT = ${buyRates.USDT.toLocaleString('fr-FR')} FCFA</span>
                     </div>
-                    <form id="achatForm">
+                    
+                    <form id="achatForm" onsubmit="return handleAchatSubmit(event)">
                         <div class="form-field">
-                            <label>1. Vous donnez (FCFA)</label>
+                            <label>1. Montant à investir (FCFA)</label>
                             <div class="input-group">
-                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
-                                <select style="background:var(--card);"><option>FCFA</option></select>
+                                <input type="number" 
+                                       min="0" 
+                                       step="100" 
+                                       id="cfaInput" 
+                                       placeholder="Ex: 5000" 
+                                       oninput="calcAchat()"
+                                       onchange="calcAchat()"
+                                       required>
+                                <select id="cryptoSelect" onchange="updateAchatUI()" style="min-width:80px;">
+                                    ${cryptoOptions()}
+                                </select>
+                            </div>
+                            <div class="settings-row-sub" style="margin-top:4px; color:var(--muted);">
+                                💡 Total à payer : <span id="totalToPayLabel">0</span> FCFA
+                            </div>
+                            <div class="min-amount-warning">
+                                ⚠️ Montant minimum recommandé : <span id="minAmountLabel">${fmtFCFA(minAmount)}</span>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>2. Vous recevez (Crypto)</label>
+                            <label>2. Vous recevrez (net)</label>
                             <div class="input-group">
-                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
-                                <select id="cryptoSelect" onchange="updateRateLabel(); updateAchatNetworks(); calcFromCFA();">${cryptoOptions()}</select>
+                                <input type="text" id="cryptoOutput" placeholder="0.0000" readonly>
+                                <select style="background:var(--card); min-width:80px;">
+                                    <option id="cryptoOutputUnit">USDT</option>
+                                </select>
                             </div>
                         </div>
 
+                        <div class="fee-breakdown" id="feeBreakdown"></div>
+
                         <div class="form-field">
-                            <label>3. Pays de résidence (paiement)</label>
+                            <label>3. Pays de résidence</label>
                             <div class="input-group">
-                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">
+                                    ${countryOptions()}
+                                </select>
                             </div>
                         </div>
 
                         <div class="form-field">
                             <label>4. Réseau mobile money (paiement)</label>
                             <div class="input-group">
-                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                                <select id="networkSelect" style="width:100%; border-left:none;">
+                                    <option value="">Sélectionnez un réseau</option>
+                                </select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>5. Numéro de téléphone (Mobile Money)</label>
+                            <label>5. Numéro de téléphone</label>
                             <div class="input-group">
                                 <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
                             </div>
@@ -706,24 +742,159 @@ function setActiveMenus(tabName) {
                             </div>
                         </div>
 
-                        <div class="info-box">Après validation, effectuez le paiement Mobile Money vers le numéro communiqué par un administrateur. Votre crypto sera créditée une fois le paiement vérifié.</div>
+                        <div class="info-box">
+                            <strong>📊 Comment ça marche ?</strong><br>
+                            • Frais de service : ${CONFIG.buyServiceFeePercent}% du montant saisi<br>
+                            • Frais de réseau : ${CONFIG.networkFeeUSDT} USDT (déduits du montant reçu)<br><br>
+                            <strong>💳 Paiement :</strong><br>
+                            Après validation, effectuez le paiement Mobile Money vers le numéro communiqué par un administrateur.<br>
+                            Votre crypto sera créditée une fois le paiement vérifié.
+                        </div>
 
-                        <button type="submit" class="btn-submit" id="achatSubmitBtn">Acheter maintenant</button>
+                        <button type="submit" class="btn-submit" id="achatSubmitBtn" disabled>
+                            Acheter maintenant
+                        </button>
                     </form>
                 </div>
             </div>
         `;
-        document.getElementById('achatForm').addEventListener('submit', handleAchatSubmit);
+
         updateNetworks();
         updateAchatNetworks();
         updateRateLabel();
+        const unitEl = document.getElementById('cryptoOutputUnit');
+        if (unitEl) unitEl.textContent = document.getElementById('cryptoSelect').value;
+        setTimeout(() => calcAchat(), 100);
+    }
+
+    function calcAchat() {
+        console.log('🔄 calcAchat() appelée');
+        
+        const cfaInput = document.getElementById('cfaInput');
+        const cryptoSelect = document.getElementById('cryptoSelect');
+        const cryptoOutput = document.getElementById('cryptoOutput');
+        const breakdown = document.getElementById('feeBreakdown');
+        const submitBtn = document.getElementById('achatSubmitBtn');
+        const totalToPayLabel = document.getElementById('totalToPayLabel');
+
+        if (!cfaInput || !cryptoSelect || !cryptoOutput) {
+            console.error('❌ Éléments DOM manquants');
+            return;
+        }
+
+        const rawValue = cfaInput.value.trim();
+        console.log('📝 Valeur brute:', rawValue);
+        
+        if (!rawValue || rawValue === '') {
+            if (cryptoOutput) cryptoOutput.value = '';
+            if (breakdown) breakdown.innerHTML = '';
+            if (totalToPayLabel) totalToPayLabel.textContent = '0';
+            if (submitBtn) submitBtn.disabled = true;
+            return;
+        }
+        
+        const cleanedValue = rawValue.replace(',', '.');
+        const montantSaisi = parseFloat(cleanedValue);
+        
+        console.log('💰 Montant parsé:', montantSaisi);
+
+        const crypto = cryptoSelect.value || 'USDT';
+        const buyRate = buyRates[crypto] || 592;
+
+        console.log(`📊 Crypto: ${crypto}, Taux: ${buyRate}`);
+
+        if (submitBtn) submitBtn.disabled = true;
+        if (cryptoOutput) cryptoOutput.value = '';
+        if (breakdown) breakdown.innerHTML = '';
+        if (totalToPayLabel) totalToPayLabel.textContent = '0';
+
+        if (isNaN(montantSaisi) || montantSaisi <= 0) {
+            console.log('⚠️ Montant invalide:', montantSaisi);
+            if (breakdown) {
+                breakdown.innerHTML = `
+                    <div class="fee-row error">
+                        ⚠️ Veuillez saisir un montant valide (ex: 5000)
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // CALCULS
+        const serviceFee = montantSaisi * (CONFIG.buyServiceFeePercent / 100);
+        const totalAPayer = montantSaisi + serviceFee;
+        const usdtBrut = totalAPayer / buyRate;
+        const networkFeeCrypto = CONFIG.networkFeeUSDT;
+        const usdtNet = usdtBrut - networkFeeCrypto;
+        
+        console.log(`✅ USDT bruts: ${usdtBrut}, USDT nets: ${usdtNet}`);
+        
+        if (usdtNet <= 0) {
+            if (breakdown) {
+                breakdown.innerHTML = `
+                    <div class="fee-row error">
+                        ⚠️ Montant insuffisant ! Le minimum est de 
+                        ${fmtFCFA(Math.ceil((networkFeeCrypto * buyRate) / (1 - CONFIG.buyServiceFeePercent / 100) + 500))}
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        const networkFeeFcfa = networkFeeCrypto * buyRate;
+
+        if (cryptoOutput) cryptoOutput.value = usdtNet.toFixed(6);
+        if (totalToPayLabel) totalToPayLabel.textContent = Math.round(totalAPayer).toLocaleString('fr-FR');
+
+        if (breakdown) {
+            breakdown.innerHTML = `
+                <div class="fee-row" style="color:var(--green);">
+                    <span>📝 Montant saisi</span>
+                    <span>${fmtFCFA(montantSaisi)}</span>
+                </div>
+                <div class="fee-row">
+                    <span>💰 Frais de service (${CONFIG.buyServiceFeePercent}%)</span>
+                    <span>+${fmtFCFA(serviceFee)}</span>
+                </div>
+                <div class="fee-row" style="color:var(--amber);">
+                    <span>💵 Total à payer</span>
+                    <span><strong>${fmtFCFA(totalAPayer)}</strong></span>
+                </div>
+                <div class="fee-row">
+                    <span>🌐 Frais de réseau (${networkFeeCrypto} ${crypto})</span>
+                    <span>-${fmtFCFA(networkFeeFcfa)}</span>
+                </div>
+                <div class="fee-row total">
+                    <span>✅ Vous recevrez</span>
+                    <span>${fmtCrypto(usdtNet)} ${crypto}</span>
+                </div>
+            `;
+        }
+
+        window.__lastAchatQuote = { 
+            montantSaisi, 
+            serviceFee, 
+            totalAPayer, 
+            usdtNet, 
+            crypto, 
+            buyRate 
+        };
+        
+        if (submitBtn) submitBtn.disabled = false;
+        console.log('✅ Calcul terminé, bouton activé');
+    }
+
+    function updateAchatUI() {
+        updateRateLabel();
+        updateAchatNetworks();
+        calcAchat();
     }
 
     function updateAchatNetworks() {
-        const crypto = document.getElementById('cryptoSelect').value;
+        const crypto = document.getElementById('cryptoSelect')?.value;
         const select = document.getElementById('achatCryptoNetwork');
-        if (!select) return;
-        select.innerHTML = blockchainNetworks[crypto].map(n => `<option value="${n}">${n}</option>`).join('');
+        if (!select || !crypto) return;
+        select.innerHTML = (blockchainNetworks[crypto] || []).map(n => `<option value="${n}">${n}</option>`).join('');
     }
 
     async function handleAchatSubmit(event) {
@@ -734,19 +905,31 @@ function setActiveMenus(tabName) {
 
         try {
             const crypto = document.getElementById('cryptoSelect').value;
-            const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
+            const montantSaisi = parseFloat(document.getElementById('cfaInput').value);
             const network = document.getElementById('networkSelect').value;
             const phone = document.getElementById('phoneNumber').value;
             const country = document.getElementById('countrySelect').value;
             const cryptoNetwork = document.getElementById('achatCryptoNetwork').value;
             const address = document.getElementById('achatAddress').value;
 
-            if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
-            if (!address) throw new Error('Merci de renseigner une adresse de réception.');
+            if (!montantSaisi) throw new Error('Montant invalide');
+            if (!address || address.length < 5) throw new Error('Adresse invalide');
+            if (!phone || phone.length < 8) throw new Error('Téléphone invalide');
+            if (!network) throw new Error('Sélectionnez un réseau');
 
-            await API.transactions.trade({ type: 'achat', crypto, cryptoAmount, network, phone, country, cryptoNetwork, address });
-            showToast('Achat enregistré. Confirmation en attente.');
-            switchTab('dashboard');
+            await API.transactions.trade({
+                type: 'achat',
+                crypto,
+                fcfaAmount: montantSaisi,
+                network,
+                phone,
+                country,
+                cryptoNetwork,
+                address
+            });
+
+            showToast(`✅ Achat enregistré ! Paiement de ${fmtFCFA(window.__lastAchatQuote.totalAPayer)} à effectuer.`);
+            setTimeout(() => switchTab('dashboard'), 1500);
         } catch (e) {
             showToast(e.message);
             btn.disabled = false;
@@ -754,107 +937,164 @@ function setActiveMenus(tabName) {
         }
     }
 
-    /* =====================================================================
-       VENTE — débite le compte crypto immédiatement, au taux de VENTE.
-       ===================================================================== */
+    // ================================================================
+    // FORMULAIRE VENTE
+    // ================================================================
 
     async function renderVenteForm() {
-        document.getElementById('mainContent').innerHTML = backLink() + `
+        const mainContent = document.getElementById('mainContent');
+        
+        mainContent.innerHTML = backLink() + `
             <div class="buy-container">
                 <div class="buy-box">
                     <div class="section-header-flex" style="margin-bottom: 20px;">
                         <h3>Vendre de la crypto</h3>
+                        <span class="profit-badge">💰 Frais inclus</span>
                     </div>
+                    
                     <div class="rate-info">
-                        <span>Taux de vente :</span> <span id="rateLabel">1 USDT = 566 FCFA</span>
+                        <span>Taux de vente :</span> 
+                        <span id="rateLabel">1 USDT = ${sellRates.USDT.toLocaleString('fr-FR')} FCFA</span>
                     </div>
-                    <form id="venteForm">
+
+                    <form id="venteForm" onsubmit="return handleVenteSubmit(event)">
                         <div class="form-field">
                             <label>1. Vous donnez (Crypto)</label>
                             <div class="input-group">
-                                <input type="number" min="0" step="any" id="cryptoOutput" placeholder="0.0000" oninput="calcFromCrypto()" required>
-                                <select id="cryptoSelect" onchange="updateRateLabel(); calcFromCrypto();">${cryptoOptions()}</select>
+                                <input type="number" 
+                                       min="0" 
+                                       step="0.1" 
+                                       id="cryptoOutput" 
+                                       placeholder="0.0000" 
+                                       oninput="calcVente()" 
+                                       required>
+                                <select id="cryptoSelect" onchange="updateVenteUI()" style="min-width:80px;">
+                                    ${cryptoOptions()}
+                                </select>
+                            </div>
+                            <div class="settings-row-sub" style="margin-top:4px; color:var(--muted);">
+                                💡 Solde : <span id="venteBalanceHint">0</span>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>2. Vous recevez (FCFA)</label>
+                            <label>2. Vous recevrez (net)</label>
                             <div class="input-group">
-                                <input type="number" min="0" step="any" id="cfaInput" placeholder="Ex: 59200" oninput="calcFromCFA()" required>
-                                <select style="background:var(--card);"><option>FCFA</option></select>
+                                <input type="text" id="cfaInput" placeholder="0" readonly>
+                                <select style="background:var(--card); min-width:80px;">
+                                    <option>FCFA</option>
+                                </select>
                             </div>
                         </div>
+
+                        <div class="fee-breakdown" id="feeBreakdown"></div>
 
                         <div class="form-field">
                             <label>3. Pays de résidence</label>
                             <div class="input-group">
-                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">${countryOptions()}</select>
+                                <select id="countrySelect" onchange="updateNetworks()" style="width:100%; border-left:none;">
+                                    ${countryOptions()}
+                                </select>
                             </div>
                         </div>
 
                         <div class="form-field">
                             <label>4. Réseau mobile money (réception)</label>
                             <div class="input-group">
-                                <select id="networkSelect" style="width:100%; border-left:none;"></select>
+                                <select id="networkSelect" style="width:100%; border-left:none;">
+                                    <option value="">Sélectionnez un réseau</option>
+                                </select>
                             </div>
                         </div>
 
                         <div class="form-field">
-                            <label>5. Numéro de téléphone (Mobile Money)</label>
+                            <label>5. Numéro de téléphone</label>
                             <div class="input-group">
-                                <input type="tel" id="phoneNumber" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
+                                <input type="tel" id="phoneNumber" placeholder="Ex: +225 00 00 00 00" required style="width:100%;">
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-submit" id="venteSubmitBtn">Vendre maintenant</button>
+                        <div class="info-box">
+                            <strong>📊 Comment ça marche ?</strong><br>
+                            • Frais de service : ${CONFIG.sellServiceFeePercent}% du montant<br>
+                            • Le montant est converti au taux de vente
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="venteSubmitBtn" disabled>
+                            Vendre maintenant
+                        </button>
                     </form>
                 </div>
             </div>
         `;
-        document.getElementById('venteForm').addEventListener('submit', handleVenteSubmit);
+
         updateNetworks();
         updateRateLabel();
+        await updateVenteBalance();
+        calcVente();
     }
 
-    function updateNetworks() {
-        const countrySelect = document.getElementById('countrySelect');
-        const networkSelect = document.getElementById('networkSelect');
-        if (!countrySelect || !networkSelect) return;
-        networkSelect.innerHTML = (paymentNetworks[countrySelect.value] || [])
-            .map(n => `<option value="${n}">${n}</option>`).join('');
+    function calcVente() {
+        const cryptoInput = document.getElementById('cryptoOutput');
+        const cryptoSelect = document.getElementById('cryptoSelect');
+        const cfaOutput = document.getElementById('cfaInput');
+        const breakdown = document.getElementById('feeBreakdown');
+        const submitBtn = document.getElementById('venteSubmitBtn');
+
+        const cryptoAmount = parseFloat(cryptoInput?.value);
+        const crypto = cryptoSelect?.value || 'USDT';
+        const sellRate = sellRates[crypto] || 593;
+
+        if (submitBtn) submitBtn.disabled = true;
+        if (!cryptoAmount || cryptoAmount <= 0 || isNaN(cryptoAmount)) {
+            if (cfaOutput) cfaOutput.value = '';
+            if (breakdown) breakdown.innerHTML = '';
+            return;
+        }
+
+        const grossFcfa = cryptoAmount * sellRate;
+        const serviceFee = grossFcfa * (CONFIG.sellServiceFeePercent / 100);
+        const netFcfa = grossFcfa - serviceFee;
+
+        if (cfaOutput) cfaOutput.value = Math.round(netFcfa);
+
+        if (breakdown) {
+            breakdown.innerHTML = `
+                <div class="fee-row" style="color:var(--green);">
+                    <span>📊 Valeur brute</span>
+                    <span>${fmtFCFA(grossFcfa)}</span>
+                </div>
+                <div class="fee-row">
+                    <span>💰 Frais de service (${CONFIG.sellServiceFeePercent}%)</span>
+                    <span>-${fmtFCFA(serviceFee)}</span>
+                </div>
+                <div class="fee-row total">
+                    <span>✅ Vous recevrez</span>
+                    <span>${fmtFCFA(netFcfa)}</span>
+                </div>
+            `;
+        }
+
+        window.__lastVenteQuote = { cryptoAmount, grossFcfa, serviceFee, netFcfa, crypto, sellRate };
+        if (submitBtn) submitBtn.disabled = false;
     }
 
-    function currentRatesForTab() {
-        // achatForm vs venteForm : utilise le bon jeu de taux selon le
-        // formulaire actuellement affiché.
-        return document.getElementById('achatForm') ? buyRates : sellRates;
+    function updateVenteUI() {
+        updateRateLabel();
+        calcVente();
+        updateVenteBalance();
     }
 
-    function updateRateLabel() {
-        const select = document.getElementById('cryptoSelect');
-        const crypto = select ? select.value : 'USDT';
-        const rate = currentRatesForTab()[crypto];
-        const label = document.getElementById('rateLabel');
-        if (label) label.textContent = `1 ${crypto} = ${rate.toLocaleString('fr-FR')} FCFA`;
-    }
-
-    function currentTradeCrypto() {
-        const select = document.getElementById('cryptoSelect');
-        return select ? select.value : 'USDT';
-    }
-
-    function calcFromCFA() {
-        const cfaInput = document.getElementById('cfaInput').value;
-        const cryptoOutput = document.getElementById('cryptoOutput');
-        const rate = currentRatesForTab()[currentTradeCrypto()];
-        cryptoOutput.value = (cfaInput && !isNaN(cfaInput)) ? (cfaInput / rate).toFixed(6) : '';
-    }
-
-    function calcFromCrypto() {
-        const cryptoInput = document.getElementById('cryptoOutput').value;
-        const cfaInput = document.getElementById('cfaInput');
-        const rate = currentRatesForTab()[currentTradeCrypto()];
-        cfaInput.value = (cryptoInput && !isNaN(cryptoInput)) ? Math.round(cryptoInput * rate) : '';
+    async function updateVenteBalance() {
+        try {
+            const cryptoSelect = document.getElementById('cryptoSelect');
+            if (!cryptoSelect) return;
+            const crypto = cryptoSelect.value;
+            const balances = await API.wallet.getBalances();
+            const balance = balances.balances?.[crypto] || 0;
+            const hint = document.getElementById('venteBalanceHint');
+            if (hint) hint.textContent = `${fmtCrypto(balance)} ${crypto}`;
+        } catch (e) { console.error(e); }
     }
 
     async function handleVenteSubmit(event) {
@@ -864,17 +1104,27 @@ function setActiveMenus(tabName) {
         btn.textContent = 'Traitement...';
 
         try {
-            const crypto = currentTradeCrypto();
+            const crypto = document.getElementById('cryptoSelect').value;
             const cryptoAmount = parseFloat(document.getElementById('cryptoOutput').value);
             const network = document.getElementById('networkSelect').value;
             const phone = document.getElementById('phoneNumber').value;
             const country = document.getElementById('countrySelect').value;
 
-            if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
+            if (!cryptoAmount) throw new Error('Montant invalide');
+            if (!phone || phone.length < 8) throw new Error('Téléphone invalide');
+            if (!network) throw new Error('Sélectionnez un réseau');
 
-            await API.transactions.trade({ type: 'vente', crypto, cryptoAmount, network, phone, country });
-            showToast('Vente enregistrée. Confirmation en attente.');
-            switchTab('dashboard');
+            await API.transactions.trade({
+                type: 'vente',
+                crypto,
+                cryptoAmount,
+                network,
+                phone,
+                country
+            });
+
+            showToast(`✅ Vente enregistrée ! ${fmtFCFA(window.__lastVenteQuote.netFcfa)} à recevoir.`);
+            setTimeout(() => switchTab('dashboard'), 1500);
         } catch (e) {
             showToast(e.message);
             btn.disabled = false;
@@ -882,11 +1132,30 @@ function setActiveMenus(tabName) {
         }
     }
 
-    /* =====================================================================
-       CONVERSION — vend la devise source (taux de vente si crypto), achète
-       la devise cible (taux d'achat si crypto). FCFA↔FCFA n'existe pas
-       (une des deux devises est toujours différente de l'autre).
-       ===================================================================== */
+    // ================================================================
+    // FONCTIONS UTILES COMMUNES
+    // ================================================================
+
+    function updateNetworks() {
+        const countrySelect = document.getElementById('countrySelect');
+        const networkSelect = document.getElementById('networkSelect');
+        if (!countrySelect || !networkSelect) return;
+        const networks = paymentNetworks[countrySelect.value] || [];
+        networkSelect.innerHTML = networks.map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+
+    function updateRateLabel() {
+        const select = document.getElementById('cryptoSelect');
+        const crypto = select?.value || 'USDT';
+        const isAchat = document.getElementById('achatForm') !== null;
+        const rate = isAchat ? buyRates[crypto] : sellRates[crypto];
+        const label = document.getElementById('rateLabel');
+        if (label) label.textContent = `1 ${crypto} = ${(rate || 592).toLocaleString('fr-FR')} FCFA`;
+    }
+
+    // ================================================================
+    // CONVERSION
+    // ================================================================
 
     async function renderConvert() {
         const balancesRes = await API.wallet.getBalances();
@@ -947,14 +1216,12 @@ function setActiveMenus(tabName) {
         updateFromBalanceHint();
     }
 
-    // Valeur en FCFA de "amount" unités de "currency" si on la VEND (source).
     function sellValueInFCFA(amount, currency) { return currency === 'FCFA' ? amount : amount * sellRates[currency]; }
-    // Quantité de "currency" obtenue avec "fcfaValue" si on l'ACHÈTE (cible).
     function buyAmountFromFCFA(fcfaValue, currency) { return currency === 'FCFA' ? fcfaValue : fcfaValue / buyRates[currency]; }
 
     function balanceHintFor(currency) {
         const bal = (window.__balancesCache && window.__balancesCache[currency]) || 0;
-        return currency === 'FCFA' ? `Solde disponible : ${fmtFCFA(bal)}` : `Solde disponible : ${fmtCrypto(bal)} ${currency}`;
+        return currency === 'FCFA' ? `Solde : ${fmtFCFA(bal)}` : `Solde : ${fmtCrypto(bal)} ${currency}`;
     }
 
     function updateFromBalanceHint() {
@@ -992,10 +1259,6 @@ function setActiveMenus(tabName) {
             toEl.value = !isNaN(amount) ? buyAmountFromFCFA(sellValueInFCFA(amount, from), to).toFixed(to === 'FCFA' ? 0 : 6) : '';
         } else {
             const amount = parseFloat(toEl.value);
-            // Sens inverse : on part de la quantité cible désirée pour
-            // remonter au montant source nécessaire — utilise le taux de
-            // vente sur la cible et le taux d'achat sur la source, symétrie
-            // volontaire pour un aperçu cohérent (le serveur recalcule).
             fromEl.value = !isNaN(amount) ? buyAmountFromFCFA(sellValueInFCFA(amount, to), from).toFixed(from === 'FCFA' ? 0 : 6) : '';
         }
     }
@@ -1021,7 +1284,7 @@ function setActiveMenus(tabName) {
             const toCurrency = document.getElementById('toCurrency').value;
             const fromAmount = parseFloat(document.getElementById('fromAmount').value);
             const toAmount = parseFloat(document.getElementById('toAmount').value);
-            if (!fromAmount || !toAmount) throw new Error('Merci de renseigner un montant valide.');
+            if (!fromAmount || !toAmount) throw new Error('Montant invalide');
 
             await API.transactions.convert({ fromCurrency, fromAmount, toCurrency, toAmount });
             showToast('Conversion effectuée avec succès.');
@@ -1033,9 +1296,9 @@ function setActiveMenus(tabName) {
         }
     }
 
-    /* =====================================================================
-       DÉPÔT — vers/depuis un portefeuille EXTERNE (blockchain), inchangé.
-       ===================================================================== */
+    // ================================================================
+    // DÉPÔT
+    // ================================================================
 
     async function renderDeposit(presetCrypto) {
         document.getElementById('mainContent').innerHTML = backLink() + `
@@ -1070,7 +1333,7 @@ function setActiveMenus(tabName) {
 
                     <form id="depositForm">
                         <div class="form-field">
-                            <label>3. Montant envoyé (optionnel, pour suivi)</label>
+                            <label>3. Montant envoyé (optionnel)</label>
                             <div class="input-group">
                                 <input type="number" min="0" step="any" id="depositAmount" placeholder="0.0000">
                                 <select style="background:var(--card);" id="depositAmountUnit"></select>
@@ -1078,7 +1341,7 @@ function setActiveMenus(tabName) {
                         </div>
 
                         <div class="form-field">
-                            <label>4. Identifiant de transaction (TxID / Hash, optionnel)</label>
+                            <label>4. Identifiant de transaction (optionnel)</label>
                             <div class="input-group">
                                 <input type="text" id="depositTxId" placeholder="Ex: 0xabc123...">
                             </div>
@@ -1105,10 +1368,10 @@ function setActiveMenus(tabName) {
     function updateDepositAddress() {
         const crypto = document.getElementById('depositCrypto').value;
         const network = document.getElementById('depositNetwork').value;
-        const address = depositAddresses[`${crypto}|${network}`] || 'Adresse indisponible pour ce réseau';
+        const address = depositAddresses[`${crypto}|${network}`] || 'Adresse indisponible';
         document.getElementById('depositAddress').textContent = address;
         document.getElementById('depositWarning').textContent =
-            `N'envoyez que des ${crypto} via le réseau ${network} à cette adresse. L'envoi d'un autre actif ou l'utilisation d'un autre réseau peut entraîner une perte définitive des fonds.`;
+            `N'envoyez que des ${crypto} via le réseau ${network} à cette adresse.`;
     }
 
     function copyAddress() {
@@ -1130,7 +1393,7 @@ function setActiveMenus(tabName) {
             const txId = document.getElementById('depositTxId').value || null;
 
             await API.transactions.deposit({ crypto, network, amount, txId });
-            showToast('Dépôt enregistré. En attente de confirmation blockchain.');
+            showToast('Dépôt enregistré. En attente de confirmation.');
             switchTab('transactions');
         } catch (e) {
             showToast(e.message);
@@ -1139,10 +1402,9 @@ function setActiveMenus(tabName) {
         }
     }
 
-    /* =====================================================================
-       RETRAIT — deux modes : portefeuille externe (crypto) OU Mobile Money
-       (FCFA).
-       ===================================================================== */
+    // ================================================================
+    // RETRAIT
+    // ================================================================
 
     async function renderWithdraw(preset) {
         const balancesRes = await API.wallet.getBalances();
@@ -1196,7 +1458,7 @@ function setActiveMenus(tabName) {
                 <div class="form-field">
                     <label>3. Adresse de destination</label>
                     <div class="input-group">
-                        <input type="text" id="withdrawAddress" placeholder="Collez l'adresse du portefeuille externe" required style="width:100%;">
+                        <input type="text" id="withdrawAddress" placeholder="Adresse du portefeuille externe" required style="width:100%;">
                     </div>
                 </div>
 
@@ -1209,7 +1471,7 @@ function setActiveMenus(tabName) {
                 </div>
 
                 <div class="warning-box">
-                    Vérifiez que l'adresse et le réseau sélectionnés correspondent bien au portefeuille de destination. Un retrait vers une adresse incompatible avec le réseau choisi entraîne une perte définitive des fonds.
+                    Vérifiez que l'adresse et le réseau correspondent au portefeuille de destination.
                 </div>
 
                 <button type="submit" class="btn-submit" id="withdrawSubmitBtn">Retirer maintenant</button>
@@ -1226,7 +1488,7 @@ function setActiveMenus(tabName) {
             .map(n => `<option value="${n}">${n}</option>`).join('');
         document.getElementById('withdrawAmountUnit').innerHTML = `<option>${crypto}</option>`;
         const bal = (window.__balancesCache && window.__balancesCache[crypto]) || 0;
-        document.getElementById('withdrawBalanceHint').textContent = `Solde disponible : ${fmtCrypto(bal)} ${crypto}`;
+        document.getElementById('withdrawBalanceHint').textContent = `Solde : ${fmtCrypto(bal)} ${crypto}`;
     }
 
     async function handleWithdrawSubmit(event) {
@@ -1239,7 +1501,7 @@ function setActiveMenus(tabName) {
             const network = document.getElementById('withdrawNetwork').value;
             const address = document.getElementById('withdrawAddress').value;
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            if (!amount) throw new Error('Merci de renseigner un montant valide.');
+            if (!amount) throw new Error('Montant invalide');
 
             await API.transactions.withdraw({ crypto, network, address, amount });
             showToast('Retrait initié. Traitement en cours.');
@@ -1254,7 +1516,7 @@ function setActiveMenus(tabName) {
     function renderWithdrawFcfaForm() {
         const bal = (window.__balancesCache && window.__balancesCache.FCFA) || 0;
         document.getElementById('withdrawFormContainer').innerHTML = `
-            <div class="settings-row-sub" style="margin-bottom:16px;">Solde FCFA disponible : ${fmtFCFA(bal)}</div>
+            <div class="settings-row-sub" style="margin-bottom:16px;">Solde FCFA : ${fmtFCFA(bal)}</div>
             <form id="withdrawFcfaForm">
                 <div class="form-field">
                     <label>1. Montant à recevoir (FCFA)</label>
@@ -1264,7 +1526,7 @@ function setActiveMenus(tabName) {
                     </div>
                 </div>
 
-                <div class="info-box" id="fcfaFeePreview">Frais : — · Total débité de votre solde : —</div>
+                <div class="info-box" id="fcfaFeePreview">Frais : — · Total débité : —</div>
 
                 <div class="form-field">
                     <label>2. Pays de résidence</label>
@@ -1274,14 +1536,14 @@ function setActiveMenus(tabName) {
                 </div>
 
                 <div class="form-field">
-                    <label>3. Réseau mobile money (réception)</label>
+                    <label>3. Réseau mobile money</label>
                     <div class="input-group">
                         <select id="fcfaWithdrawNetwork" style="width:100%; border-left:none;"></select>
                     </div>
                 </div>
 
                 <div class="form-field">
-                    <label>4. Numéro de téléphone (Mobile Money)</label>
+                    <label>4. Numéro de téléphone</label>
                     <div class="input-group">
                         <input type="tel" id="fcfaWithdrawPhone" placeholder="Ex: +226 00 00 00 00" required style="width:100%;">
                     </div>
@@ -1307,11 +1569,11 @@ function setActiveMenus(tabName) {
         const amount = parseFloat(document.getElementById('fcfaWithdrawAmount').value);
         const preview = document.getElementById('fcfaFeePreview');
         if (!amount || isNaN(amount)) {
-            preview.textContent = 'Frais : — · Total débité de votre solde : —';
+            preview.textContent = 'Frais : — · Total débité : —';
             return;
         }
         const fee = Math.max(Math.round(amount * FCFA_WITHDRAWAL_FEE_PERCENT / 100), FCFA_WITHDRAWAL_MIN_FEE);
-        preview.textContent = `Frais : ${fmtFCFA(fee)} · Total débité de votre solde : ${fmtFCFA(amount + fee)}`;
+        preview.textContent = `Frais : ${fmtFCFA(fee)} · Total débité : ${fmtFCFA(amount + fee)}`;
     }
 
     async function handleFcfaWithdrawSubmit(event) {
@@ -1324,10 +1586,10 @@ function setActiveMenus(tabName) {
             const network = document.getElementById('fcfaWithdrawNetwork').value;
             const phone = document.getElementById('fcfaWithdrawPhone').value;
             const country = document.getElementById('fcfaWithdrawCountry').value;
-            if (!amount) throw new Error('Merci de renseigner un montant valide.');
+            if (!amount) throw new Error('Montant invalide');
 
             await API.transactions.withdrawFcfa({ amount, network, phone, country });
-            showToast('Retrait Mobile Money enregistré. Confirmation en attente.');
+            showToast('Retrait Mobile Money enregistré.');
             switchTab('transactions');
         } catch (e) {
             showToast(e.message);
@@ -1336,9 +1598,9 @@ function setActiveMenus(tabName) {
         }
     }
 
-    /* =====================================================================
-       PORTEFEUILLE — carte FCFA distincte des cartes crypto.
-       ===================================================================== */
+    // ================================================================
+    // PORTEFEUILLE
+    // ================================================================
 
     async function renderWallet() {
         const balancesRes = await API.wallet.getBalances();
@@ -1352,7 +1614,7 @@ function setActiveMenus(tabName) {
                 </div>
                 <div class="wallet-amounts">
                     <div class="amount">${fmtFCFA(balances.FCFA || 0)}</div>
-                    <div class="fcfa">Solde disponible pour retrait Mobile Money</div>
+                    <div class="fcfa">Solde disponible pour retrait</div>
                 </div>
                 <div class="wallet-card-actions">
                     <div class="mini-btn" onclick="switchTab('retirer', 'FCFA')">Retirer</div>
@@ -1387,9 +1649,9 @@ function setActiveMenus(tabName) {
         `;
     }
 
-    /* =====================================================================
-       TRANSACTIONS
-       ===================================================================== */
+    // ================================================================
+    // TRANSACTIONS
+    // ================================================================
 
     async function renderTransactions(filter) {
         __currentTab = 'transactions';
@@ -1413,7 +1675,7 @@ function setActiveMenus(tabName) {
             ? `<div class="empty-transactions">
                     <svg class="icon" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/></svg>
                     <p>Aucune transaction</p>
-                    <span>Les opérations de ce type apparaîtront ici</span>
+                    <span>Les opérations apparaîtront ici</span>
                </div>`
             : `<div class="tx-list">${transactions.map(txRowHTML).join('')}</div>`;
 
@@ -1425,11 +1687,11 @@ function setActiveMenus(tabName) {
         setActiveMenus('transactions');
     }
 
-    /* =====================================================================
-       PROFIL
-       ===================================================================== */
+    // ================================================================
+    // PROFIL
+    // ================================================================
 
-async function renderProfil() {
+    async function renderProfil() {
         const res = await API.profile.get();
         const profile = normalizeProfile(res.profile);
         
@@ -1442,7 +1704,7 @@ async function renderProfil() {
                 <div class="profile-avatar">${initial}</div>
                 <div>
                     <div class="profile-name">${profile.firstName || ''} ${profile.lastName || ''}</div>
-                    <div class="profile-email">${profile.email || 'Aucun e-mail renseigné'}</div>
+                    <div class="profile-email">${profile.email || 'Aucun e-mail'}</div>
                 </div>
             </div>
 
@@ -1477,10 +1739,10 @@ async function renderProfil() {
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-submit" id="profileSubmitBtn">Enregistrer les modifications</button>
+                        <button type="submit" class="btn-submit" id="profileSubmitBtn">Enregistrer</button>
                     </form>
                     
-                    <button class="btn-secondary" style="margin-top: 10px;" onclick="switchTab('parametres')">⚙️ Gérer les paramètres du compte</button>
+                    <button class="btn-secondary" style="margin-top: 10px;" onclick="switchTab('parametres')">⚙️ Paramètres</button>
                 </div>
             </div>
         `;
@@ -1506,21 +1768,13 @@ async function renderProfil() {
         } catch (e) {
             showToast(e.message);
             btn.disabled = false;
-            btn.textContent = 'Enregistrer les modifications';
+            btn.textContent = 'Enregistrer';
         }
     }
 
-    // async function startKyc() {
-    //     try {
-    //         await API.profile.startKyc();
-    //         showToast("Vérification d'identité lancée");
-    //         renderProfil();
-    //     } catch (e) { showToast(e.message); }
-    // }
-
-    /* =====================================================================
-       PARAMÈTRES
-       ===================================================================== */
+    // ================================================================
+    // PARAMÈTRES
+    // ================================================================
 
     async function renderParametres() {
         const res = await API.settings.get();
@@ -1558,7 +1812,7 @@ async function renderProfil() {
 
             <div class="settings-block">
                 <h4>Notifications</h4>
-                <div class="desc">Choisissez comment être prévenu de l'état de vos transactions.</div>
+                <div class="desc">Choisissez comment être prévenu.</div>
                 <div class="settings-row">
                     <div><div class="settings-row-label">E-mail</div></div>
                     <label class="toggle"><input type="checkbox" id="notifEmail" onchange="onSettingChange()"><span class="toggle-slider"></span></label>
@@ -1579,7 +1833,7 @@ async function renderProfil() {
                 <div class="settings-row">
                     <div>
                         <div class="settings-row-label">Authentification à deux facteurs</div>
-                        <div class="settings-row-sub">Code de sécurité supplémentaire à la connexion</div>
+                        <div class="settings-row-sub">Code de sécurité supplémentaire</div>
                     </div>
                     <label class="toggle"><input type="checkbox" id="twoFactor" onchange="onSettingChange()"><span class="toggle-slider"></span></label>
                 </div>
@@ -1602,16 +1856,16 @@ async function renderProfil() {
                     <button type="submit" class="btn-secondary" id="passwordSubmitBtn">Changer le mot de passe</button>
                 </form>
                 <div class="settings-section">
-    <h3>Session</h3>
-    <button class="btn-danger" onclick="handleLogout()">Se déconnecter</button>
-</div>
+                    <h3>Session</h3>
+                    <button class="btn-secondary" onclick="handleLogout()">Se déconnecter</button>
+                </div>
             </div>
         `;
 
         document.getElementById('languageSelect').value = settings.language;
-        document.getElementById('notifEmail').checked = !!settings.notifications.email;
-        document.getElementById('notifSms').checked = !!settings.notifications.sms;
-        document.getElementById('notifPush').checked = !!settings.notifications.push;
+        document.getElementById('notifEmail').checked = !!settings.notifications?.email;
+        document.getElementById('notifSms').checked = !!settings.notifications?.sms;
+        document.getElementById('notifPush').checked = !!settings.notifications?.push;
         document.getElementById('twoFactor').checked = !!settings.twoFactor;
         highlightThemeButtons(settings.theme);
 
@@ -1619,8 +1873,10 @@ async function renderProfil() {
     }
 
     function highlightThemeButtons(theme) {
-        document.getElementById('themeLightBtn').classList.toggle('active', theme === 'light');
-        document.getElementById('themeDarkBtn').classList.toggle('active', theme === 'dark');
+        const lightBtn = document.getElementById('themeLightBtn');
+        const darkBtn = document.getElementById('themeDarkBtn');
+        if (lightBtn) lightBtn.classList.toggle('active', theme === 'light');
+        if (darkBtn) darkBtn.classList.toggle('active', theme === 'dark');
     }
 
     async function setTheme(theme) {
@@ -1628,9 +1884,7 @@ async function renderProfil() {
         else document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('theme', theme);
         highlightThemeButtons(theme);
-        try {
-            await API.settings.update({ theme });
-        } catch (e) { showToast(e.message); }
+        try { await API.settings.update({ theme }); } catch (e) { showToast(e.message); }
     }
 
     async function onSettingChange() {
@@ -1671,9 +1925,9 @@ async function renderProfil() {
         }
     }
 
-    /* =====================================================================
-       INITIALISATION
-       ===================================================================== */
+    // ================================================================
+    // INITIALISATION
+    // ================================================================
 
     (function applyCachedTheme() {
         const cached = localStorage.getItem('theme');
