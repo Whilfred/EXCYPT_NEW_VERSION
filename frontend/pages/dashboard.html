@@ -744,7 +744,16 @@ function setActiveMenus(tabName) {
             if (!cryptoAmount) throw new Error('Merci de renseigner un montant valide.');
             if (!address) throw new Error('Merci de renseigner une adresse de réception.');
 
-            await API.transactions.trade({ type: 'achat', crypto, cryptoAmount, network, phone, country, cryptoNetwork, address });
+        await API.transactions.trade({
+    type: 'achat',
+    crypto,
+    fcfaAmount: montantSaisi,
+    network,
+    phone,
+    country,
+    cryptoNetwork,
+    address
+    });
             showToast('Achat enregistré. Confirmation en attente.');
             switchTab('dashboard');
         } catch (e) {
