@@ -24,27 +24,52 @@ async function list(req, res) {
 // ================================================================
 
 async function trade(req, res) {
-    console.log('📥 [trade] Requête reçue:', req.body);
+    console.log('📥 [trade] ========================================');
+    console.log('📥 [trade] Requête reçue - Body complet:', JSON.stringify(req.body, null, 2));
+    console.log('📥 [trade] Headers:', req.headers);
+    console.log('📥 [trade] ========================================');
 
     const { type, crypto, network, phone, country, address, cryptoNetwork } = req.body;
     
-    // Récupérer les montants
-    let cryptoAmount = parseFloat(req.body.cryptoAmount);
-    let fcfaAmount = parseFloat(req.body.fcfaAmount);
+    // Récupérer les montants de plusieurs façons possibles
+    let cryptoAmount = parseFloat(req.body.cryptoAmount) || 0;
+    let fcfaAmount = parseFloat(req.body.fcfaAmount) || 0;
     
-    console.log(`📊 [trade] Type: ${type}, Crypto: ${crypto}, CryptoAmount: ${cryptoAmount}, FCFA: ${fcfaAmount}`);
+    // Si fcfaAmount n'est pas trouvé, essayer d'autres noms de champs
+    if (!fcfaAmount || isNaN(fcfaAmount) || fcfaAmount <= 0) {
+        fcfaAmount = parseFloat(req.body.montant) || 0;
+    }
+    if (!fcfaAmount || isNaN(fcfaAmount) || fcfaAmount <= 0) {
+        fcfaAmount = parseFloat(req.body.amount) || 0;
+    }
+    if (!fcfaAmount || isNaN(fcfaAmount) || fcfaAmount <= 0) {
+        fcfaAmount = parseFloat(req.body.montantSaisi) || 0;
+    }
+    
+    console.log(`📊 [trade] Type: ${type}`);
+    console.log(`📊 [trade] Crypto: ${crypto}`);
+    console.log(`📊 [trade] cryptoAmount: ${cryptoAmount} (brut: ${req.body.cryptoAmount})`);
+    console.log(`📊 [trade] fcfaAmount: ${fcfaAmount} (brut: ${req.body.fcfaAmount})`);
+    console.log(`📊 [trade] phone: ${phone}`);
+    console.log(`📊 [trade] network: ${network}`);
+    console.log(`📊 [trade] country: ${country}`);
+    console.log(`📊 [trade] address: ${address}`);
+    console.log(`📊 [trade] cryptoNetwork: ${cryptoNetwork}`);
 
     // ================================================================
     // VALIDATIONS COMMUNES
     // ================================================================
 
     if (!['achat', 'vente'].includes(type)) {
+        console.error('🔴 [trade] Type invalide:', type);
         return res.status(400).json({ error: 'Type invalide.' });
     }
     if (!isValidCrypto(crypto)) {
+        console.error('🔴 [trade] Crypto invalide:', crypto);
         return res.status(400).json({ error: 'Crypto invalide.' });
     }
     if (!phone || !network || !country) {
+        console.error('🔴 [trade] Données manquantes:', { phone, network, country });
         return res.status(400).json({ error: 'Réseau, pays et téléphone requis.' });
     }
 
@@ -53,20 +78,35 @@ async function trade(req, res) {
     // ================================================================
 
     if (type === 'achat') {
-        // Le client envoie fcfaAmount (le montant qu'il veut investir)
-        if (!fcfaAmount || fcfaAmount <= 0 || isNaN(fcfaAmount)) {
-            return res.status(400).json({ error: 'Montant FCFA invalide.' });
+        console.log('🟢 [achat] Début du traitement');
+        console.log(`🟢 [achat] fcfaAmount reçu: ${fcfaAmount}, type: ${typeof fcfaAmount}`);
+        
+        // Vérification stricte du montant
+        if (!fcfaAmount || isNaN(fcfaAmount) || fcfaAmount <= 0) {
+            console.error('🔴 [achat] fcfaAmount invalide:', fcfaAmount);
+            console.error('🔴 [achat] Body complet:', req.body);
+            return res.status(400).json({ 
+                error: 'Montant FCFA invalide. Veuillez saisir un montant valide (ex: 5000).',
+                debug: {
+                    received: req.body,
+                    fcfaAmount: req.body.fcfaAmount,
+                    parsed: fcfaAmount
+                }
+            });
         }
 
         // Vérifications pour l'achat
         if (!address) {
+            console.error('🔴 [achat] Adresse manquante');
             return res.status(400).json({ error: 'Adresse de réception requise.' });
         }
-        if (!cryptoNetwork || !NETWORKS_BY_CRYPTO[crypto].includes(cryptoNetwork)) {
+        if (!cryptoNetwork || !NETWORKS_BY_CRYPTO[crypto] || !NETWORKS_BY_CRYPTO[crypto].includes(cryptoNetwork)) {
+            console.error('🔴 [achat] Réseau blockchain invalide:', cryptoNetwork);
             return res.status(400).json({ error: 'Réseau blockchain invalide pour cette crypto.' });
         }
 
         const buyRate = CRYPTO_BUY_RATES[crypto];
+        console.log(`🟢 [achat] Taux d\'achat: ${buyRate}`);
         
         // 1. Frais de service (4% du montant saisi)
         const serviceFee = fcfaAmount * 0.04;
@@ -82,12 +122,14 @@ async function trade(req, res) {
         // 4. Vérifier que le montant est positif
         if (cryptoAmountNet <= 0) {
             const minAmount = Math.ceil((networkFeeCrypto * buyRate) / 0.96 + 500);
+            console.error('🔴 [achat] Montant insuffisant, minimum:', minAmount);
             return res.status(400).json({ 
                 error: `Montant insuffisant. Minimum recommandé : ${minAmount.toLocaleString('fr-FR')} FCFA.`
             });
         }
 
         console.log(`📊 [achat] ${fcfaAmount} FCFA → ${cryptoAmountNet.toFixed(6)} ${crypto}`);
+        console.log(`📊 [achat] Détail: ServiceFee=${serviceFee}, TotalAPayer=${totalAPayer}, NetworkFee=${networkFeeCrypto}`);
 
         // Stocker le cryptoAmount final
         cryptoAmount = cryptoAmountNet;
@@ -116,7 +158,7 @@ async function trade(req, res) {
 
             await client.query('COMMIT');
             
-            console.log('✅ [achat] Transaction créée:', tx.id);
+            console.log('✅ [achat] Transaction créée avec succès, ID:', tx.id);
             
             res.status(201).json({
                 success: true,
@@ -133,7 +175,8 @@ async function trade(req, res) {
             });
         } catch (err) {
             await client.query('ROLLBACK');
-            console.error('🔴 [achat] ERREUR:', err.message);
+            console.error('🔴 [achat] ERREUR SQL:', err.message);
+            console.error('🔴 [achat] Stack:', err.stack);
             res.status(400).json({ 
                 success: false, 
                 error: err.message || "Erreur lors de l'achat." 
@@ -148,12 +191,17 @@ async function trade(req, res) {
     // ================================================================
 
     if (type === 'vente') {
+        console.log('🟢 [vente] Début du traitement');
+        console.log(`🟢 [vente] cryptoAmount reçu: ${cryptoAmount}, type: ${typeof cryptoAmount}`);
+        
         // Le client envoie cryptoAmount (la quantité de crypto qu'il vend)
         if (!cryptoAmount || cryptoAmount <= 0 || isNaN(cryptoAmount)) {
+            console.error('🔴 [vente] cryptoAmount invalide:', cryptoAmount);
             return res.status(400).json({ error: 'Montant crypto invalide.' });
         }
 
         const sellRate = CRYPTO_SELL_RATES[crypto];
+        console.log(`🟢 [vente] Taux de vente: ${sellRate}`);
 
         // 1. Valeur brute en FCFA
         const grossFcfa = cryptoAmount * sellRate;
@@ -163,6 +211,7 @@ async function trade(req, res) {
         const netFcfa = grossFcfa - serviceFee;
 
         console.log(`📊 [vente] ${cryptoAmount} ${crypto} → ${netFcfa} FCFA`);
+        console.log(`📊 [vente] Détail: GrossFcfa=${grossFcfa}, ServiceFee=${serviceFee}, NetFcfa=${netFcfa}`);
 
         const client = await pool.connect();
 
@@ -186,7 +235,7 @@ async function trade(req, res) {
 
             await client.query('COMMIT');
             
-            console.log('✅ [vente] Transaction créée:', tx.id);
+            console.log('✅ [vente] Transaction créée avec succès, ID:', tx.id);
             
             res.status(201).json({
                 success: true,
@@ -202,7 +251,8 @@ async function trade(req, res) {
             });
         } catch (err) {
             await client.query('ROLLBACK');
-            console.error('🔴 [vente] ERREUR:', err.message);
+            console.error('🔴 [vente] ERREUR SQL:', err.message);
+            console.error('🔴 [vente] Stack:', err.stack);
             res.status(400).json({ 
                 success: false, 
                 error: err.message || "Erreur lors de la vente." 
@@ -218,6 +268,8 @@ async function trade(req, res) {
 // ================================================================
 
 async function convert(req, res) {
+    console.log('📥 [convert] Requête reçue:', req.body);
+    
     const { fromCurrency, toCurrency } = req.body;
     const fromAmount = parseFloat(req.body.fromAmount);
 
@@ -241,6 +293,8 @@ async function convert(req, res) {
     // toCurrency (taux d'achat si crypto)
     const fcfaValue = isFromCrypto ? fromAmount * CRYPTO_SELL_RATES[fromCurrency] : fromAmount;
     const toAmount = isToCrypto ? fcfaValue / CRYPTO_BUY_RATES[toCurrency] : fcfaValue;
+
+    console.log(`📊 [convert] ${fromAmount} ${fromCurrency} → ${toAmount} ${toCurrency}`);
 
     const client = await pool.connect();
 
@@ -275,6 +329,8 @@ async function convert(req, res) {
 // ================================================================
 
 async function deposit(req, res) {
+    console.log('📥 [deposit] Requête reçue:', req.body);
+    
     const { crypto, network, txId } = req.body;
     const amount = req.body.amount ? parseFloat(req.body.amount) : null;
 
@@ -313,6 +369,8 @@ async function deposit(req, res) {
 // ================================================================
 
 async function withdraw(req, res) {
+    console.log('📥 [withdraw] Requête reçue:', req.body);
+    
     const { crypto, network, address } = req.body;
     const amount = parseFloat(req.body.amount);
 
@@ -358,6 +416,8 @@ async function withdraw(req, res) {
 // ================================================================
 
 async function withdrawFcfa(req, res) {
+    console.log('📥 [withdrawFcfa] Requête reçue:', req.body);
+    
     const { network, phone, country } = req.body;
     const amount = parseFloat(req.body.amount);
 
@@ -406,6 +466,8 @@ async function withdrawFcfa(req, res) {
 // ================================================================
 
 async function confirm(req, res) {
+    console.log('📥 [confirm] Requête reçue, ID:', req.params.id);
+    
     const { id } = req.params;
     const client = await pool.connect();
 
@@ -439,6 +501,8 @@ async function confirm(req, res) {
 // ================================================================
 
 async function cancel(req, res) {
+    console.log('📥 [cancel] Requête reçue, ID:', req.params.id);
+    
     const { id } = req.params;
     const client = await pool.connect();
 
