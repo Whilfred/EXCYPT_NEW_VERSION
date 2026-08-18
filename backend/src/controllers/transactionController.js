@@ -36,7 +36,7 @@ async function trade(req, res) {
         return res.status(400).json({ error: 'Crypto invalide.' });
     }
     if (!cryptoAmount || cryptoAmount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide.' });
+        return res.status(400).json({ error: 'Montant invalide 1.' });
     }
     if (!phone || !network || !country) {
         return res.status(400).json({ error: 'Réseau, pays et téléphone requis.' });
@@ -99,7 +99,7 @@ async function convert(req, res) {
         return res.status(400).json({ error: 'Choisissez deux devises différentes.' });
     }
     if (!fromAmount || fromAmount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide.' });
+        return res.status(400).json({ error: 'Montant invalide. 2 ' });
     }
 
     // On "vend" fromCurrency (taux de vente si crypto) puis on "achète"
@@ -173,7 +173,7 @@ async function withdraw(req, res) {
         return res.status(400).json({ error: 'Adresse de destination requise.' });
     }
     if (!amount || amount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide.' });
+        return res.status(400).json({ error: 'Montant invalide. 3' });
     }
 
     const client = await pool.connect();
@@ -200,7 +200,7 @@ async function withdrawFcfa(req, res) {
     const amount = parseFloat(req.body.amount);
 
     if (!amount || amount <= 0) {
-        return res.status(400).json({ error: 'Montant invalide.' });
+        return res.status(400).json({ error: 'Montant invalide. 4' });
     }
     if (amount < MIN_FCFA_WITHDRAWAL) {
         return res.status(400).json({ error: `Le montant minimum de retrait est de ${MIN_FCFA_WITHDRAWAL} FCFA.` });
