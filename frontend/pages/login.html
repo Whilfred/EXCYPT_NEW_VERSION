@@ -37,9 +37,34 @@
     input:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,132,91,.12); }
     .input-icon { position:absolute; top:50%; right:14px; transform:translateY(-50%); color:#89949e; pointer-events:none; }
     .input-icon svg { width:17px; height:17px; display:block; }
-    .toggle-password { position:absolute; top:50%; right:9px; transform:translateY(-50%); border:0; background:transparent; color:#89949e; padding:6px; }
-    .toggle-password:hover { color:var(--green); }
-    .has-toggle input { padding-right:42px; }
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 9px;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #89949e;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+      z-index: 2;
+    }
+    .toggle-password:hover {
+      background: rgba(22, 132, 91, 0.08);
+      color: var(--green);
+    }
+    .toggle-password:focus-visible {
+      outline: 3px solid rgba(22, 132, 91, 0.2);
+      outline-offset: 2px;
+    }
+    .toggle-password svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+    }
+    .has-toggle input { padding-right: 46px; }
     .has-toggle .input-icon { display:none; }
     .form-options { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:2px 0 24px; color:var(--muted); font-size:.82rem; }
     .checkbox-label { display:flex; align-items:center; gap:8px; font-weight:400; color:var(--muted); margin:0; cursor:pointer; }
@@ -49,15 +74,55 @@
     .btn-primary { width:100%; min-height:46px; border:1px solid var(--green); border-radius:6px; background:var(--green); color:#fff; font-size:.92rem; font-weight:600; transition:background .2s,border-color .2s; }
     .btn-primary:hover { background:var(--green-dark); border-color:var(--green-dark); }
     .btn-primary:focus-visible, .toggle-password:focus-visible, .back-link:focus-visible { outline:3px solid rgba(22,132,91,.2); outline-offset:2px; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     .auth-divider { display:flex; align-items:center; gap:12px; margin:24px 0 20px; color:#9aa3ab; font-size:.8rem; }
     .auth-divider::before, .auth-divider::after { content:""; height:1px; flex:1; background:var(--line); }
     .auth-alternative { text-align:center; color:var(--muted); font-size:.88rem; }
     .auth-alternative p { margin:0; }
     .auth-footer { color:var(--muted); font-size:.75rem; line-height:1.6; text-align:center; margin-top:20px; }
     .auth-footer a { text-decoration:underline; text-underline-offset:2px; }
-    .btn-loader { display:inline-flex; }
+    .btn-loader { display:inline-flex; align-items:center; gap:8px; }
     .spinner { width:16px; height:16px; display:inline-block; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      width: 100%;
+      max-width: 480px;
+      padding: 0 16px;
+    }
+    .toast {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity .3s, transform .3s;
+      pointer-events: auto;
+      text-align: center;
+      width: 100%;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast.success { background: var(--green); color: white; }
+    .toast.error { background: #cf304a; color: white; }
+    
     @media (max-width:620px) {
       .container { width:min(100% - 28px,1100px); }
       .auth-main { min-height:calc(100vh - 71px); padding:42px 14px; align-items:flex-start; }
@@ -93,41 +158,259 @@
           <label for="email">Adresse email</label>
           <div class="input-wrapper">
             <input type="email" id="email" name="email" placeholder="vous@exemple.com" required autocomplete="email">
-            <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m4 7 8 6 8-6"></path></svg></span>
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="5" width="18" height="14" rx="3"></rect>
+                <path d="m4 7 8 6 8-6"></path>
+              </svg>
+            </span>
           </div>
         </div>
+        
         <div class="form-group">
           <label for="password">Mot de passe</label>
           <div class="input-wrapper has-toggle">
             <input type="password" id="password" name="password" placeholder="Votre mot de passe" required autocomplete="current-password">
-            <button type="button" class="toggle-password" id="togglePassword" aria-label="Afficher le mot de passe" aria-pressed="false"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></button>
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="5" width="18" height="14" rx="3"></rect>
+                <path d="m4 7 8 6 8-6"></path>
+              </svg>
+            </span>
+            <button type="button" class="toggle-password" id="togglePassword" aria-label="Afficher le mot de passe" aria-pressed="false" title="Afficher/Masquer le mot de passe">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                <circle cx="12" cy="12" r="2.5"/>
+              </svg>
+            </button>
           </div>
         </div>
+        
         <div class="form-options">
-          <label class="checkbox-label"><input type="checkbox" name="remember" checked><span>Se souvenir de moi</span></label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="remember" checked>
+            <span>Se souvenir de moi</span>
+          </label>
           <a href="/pages/forgot-password.html" class="forgot-link">Mot de passe oublié ?</a>
         </div>
-        <button type="submit" class="btn-primary" id="loginBtn"><span class="btn-text">Se connecter</span><span class="btn-loader" style="display:none"><span class="spinner" aria-hidden="true"></span></span></button>
+        
+        <button type="submit" class="btn-primary" id="loginBtn">
+          <span class="btn-text">Se connecter</span>
+          <span class="btn-loader" style="display:none">
+            <span class="spinner" aria-hidden="true"></span>
+            Connexion...
+          </span>
+        </button>
+        
         <div class="auth-divider" aria-hidden="true"><span>ou</span></div>
-        <div class="auth-alternative"><p>Pas encore de compte ? <a href="/pages/register.html" class="auth-link">Créer un compte</a></p></div>
+        
+        <div class="auth-alternative">
+          <p>Pas encore de compte ? <a href="/pages/register.html" class="auth-link">Créer un compte</a></p>
+        </div>
       </form>
       <p class="auth-footer">En vous connectant, vous acceptez nos <a href="#">conditions d'utilisation</a>.</p>
     </section>
   </main>
 
-  <div class="toast-container" aria-live="polite"></div>
+  <div class="toast-container" id="toastContainer"></div>
+
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
+  
+  <!-- ================================================================
+       TOGGLE PASSWORD - Fonctionne avec tous les navigateurs
+       ================================================================ -->
   <script>
-    const toggle = document.getElementById('togglePassword');
-    const password = document.getElementById('password');
-    toggle?.addEventListener('click', () => {
-      const isVisible = password.type === 'text';
-      password.type = isVisible ? 'password' : 'text';
-      toggle.setAttribute('aria-pressed', String(!isVisible));
-      toggle.setAttribute('aria-label', isVisible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
-    });
+    (function() {
+      'use strict';
+      
+      // Fonction pour initialiser le toggle password
+      function initPasswordToggle() {
+        console.log('🔐 Initialisation du toggle password');
+        
+        const toggle = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        
+        if (!toggle) {
+          console.error('❌ Bouton togglePassword introuvable');
+          return;
+        }
+        if (!password) {
+          console.error('❌ Champ password introuvable');
+          return;
+        }
+        
+        console.log('✅ Éléments trouvés, attachement de l\'événement');
+        
+        // Fonction de toggle
+        function togglePasswordVisibility() {
+          const isVisible = password.type === 'text';
+          password.type = isVisible ? 'password' : 'text';
+          
+          // Mettre à jour les attributs ARIA
+          toggle.setAttribute('aria-pressed', String(!isVisible));
+          toggle.setAttribute('aria-label', isVisible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+          toggle.title = isVisible ? 'Afficher le mot de passe' : 'Masquer le mot de passe';
+          
+          // Changer l'icône
+          const svg = toggle.querySelector('svg');
+          if (svg) {
+            if (isVisible) {
+              // Mot de passe masqué → œil barré
+              svg.innerHTML = `
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                <circle cx="12" cy="12" r="2.5"/>
+                <path d="M4 4L20 20" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M20 4L4 20" stroke="currentColor" stroke-width="1.8"/>
+              `;
+            } else {
+              // Mot de passe visible → œil ouvert
+              svg.innerHTML = `
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                <circle cx="12" cy="12" r="2.5"/>
+              `;
+            }
+          }
+          
+          // Focus sur le champ après toggle
+          password.focus();
+          
+          console.log(`👁️ Mot de passe ${isVisible ? 'masqué' : 'affiché'}`);
+        }
+        
+        // Supprimer les anciens écouteurs (évite les doublons)
+        const newToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(newToggle, toggle);
+        
+        // Ajouter l'écouteur d'événement
+        newToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          togglePasswordVisibility();
+        });
+        
+        // Raccourci clavier : Alt + P (ou Ctrl + Shift + P)
+        document.addEventListener('keydown', function(e) {
+          if ((e.altKey || (e.ctrlKey && e.shiftKey)) && e.key === 'p') {
+            e.preventDefault();
+            togglePasswordVisibility();
+          }
+        });
+        
+        // Mettre à jour la référence globale
+        window._togglePassword = togglePasswordVisibility;
+        
+        console.log('✅ Toggle password initialisé avec succès');
+        console.log('💡 Raccourci : Alt + P pour afficher/masquer le mot de passe');
+      }
+      
+      // Initialiser au chargement du DOM
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPasswordToggle);
+      } else {
+        initPasswordToggle();
+      }
+    })();
   </script>
+  
+  <script>
+    // ================================================================
+    // GESTION DU FORMULAIRE DE CONNEXION
+    // ================================================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('loginForm');
+      const btn = document.getElementById('loginBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+      
+      if (form) {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const email = document.getElementById('email').value.trim();
+          const password = document.getElementById('password').value;
+          
+          // Validation simple
+          if (!email || !password) {
+            showToast('Veuillez remplir tous les champs', 'error');
+            return;
+          }
+          
+          // Désactiver le bouton
+          btn.disabled = true;
+          btnText.style.display = 'none';
+          btnLoader.style.display = 'inline-flex';
+          
+          try {
+            // Appel à l'API de connexion
+            const response = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+              throw new Error(data.error || 'Erreur de connexion');
+            }
+            
+            // Stocker le token
+            if (data.token) {
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('user', JSON.stringify(data.user));
+              
+              showToast('✅ Connexion réussie !', 'success');
+              
+              // Rediriger vers le tableau de bord
+              setTimeout(() => {
+                window.location.href = 'dashboard.html';
+              }, 800);
+            }
+            
+          } catch (err) {
+            console.error('Erreur de connexion:', err);
+            showToast(err.message || 'Erreur de connexion', 'error');
+            
+            // Réactiver le bouton
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+          }
+        });
+      }
+    });
+    
+    // ================================================================
+    // TOAST NOTIFICATIONS
+    // ================================================================
+    
+    function showToast(message, type) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (type ? ' ' + type : '');
+      toast.textContent = message;
+      
+      container.appendChild(toast);
+      
+      // Afficher avec animation
+      requestAnimationFrame(() => {
+        toast.classList.add('show');
+      });
+      
+      // Supprimer après 3 secondes
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }
+  </script>
+  
   <script src="../js/pwa.js"></script>
 </body>
 </html>
