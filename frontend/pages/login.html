@@ -7,12 +7,12 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Connexion — ExCrypt</title>
-  <style>
-    :root { --ink:#17202a; --muted:#68727d; --line:#e5e8eb; --paper:#fff; --soft:#f6f7f8; --green:#16845b; --green-dark:#0f6848; }
+<style>
+    :root { --ink:#17202a; --muted:#68727d; --line:#e5e8eb; --paper:#fff; --soft:#f6f7f8; --green:#16845b; --green-dark:#0f6848; --border:#e5e8eb; --card:#fff; --red:#e74c3c; --text:#17202a; --bg:#f6f7f8; }
     * { box-sizing:border-box; margin:0; padding:0; }
     body { min-height:100vh; background:var(--paper); color:var(--ink); font-family:Arial,Helvetica,sans-serif; line-height:1.5; }
     a { color:inherit; text-decoration:none; }
-    button, input { font:inherit; }
+    button, input, select { font:inherit; }
     button { cursor:pointer; }
     .navbar { background:#fff; border-bottom:1px solid var(--line); }
     .container { width:min(1100px,calc(100% - 40px)); margin:0 auto; }
@@ -31,10 +31,10 @@
     .form-group { margin-bottom:20px; }
     label { display:block; color:var(--ink); font-size:.85rem; font-weight:600; margin-bottom:8px; }
     .input-wrapper { position:relative; }
-    input[type=email], input[type=password], input[type=text] { width:100%; height:46px; padding:0 42px 0 13px; border:1px solid #cfd5db; border-radius:6px; outline:0; color:var(--ink); background:#fff; transition:border-color .2s,box-shadow .2s; }
+    input[type=email], input[type=password], input[type=text], input[type=number], input[type=tel], select { width:100%; height:46px; padding:0 42px 0 13px; border:1px solid #cfd5db; border-radius:6px; outline:0; color:var(--ink); background:#fff; transition:border-color .2s,box-shadow .2s; }
     input::placeholder { color:#98a1aa; }
-    input:hover { border-color:#aeb7bf; }
-    input:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,132,91,.12); }
+    input:hover, select:hover { border-color:#aeb7bf; }
+    input:focus, select:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,132,91,.12); }
     .input-icon { position:absolute; top:50%; right:14px; transform:translateY(-50%); color:#89949e; pointer-events:none; }
     .input-icon svg { width:17px; height:17px; display:block; }
     .toggle-password { position:absolute; top:50%; right:9px; transform:translateY(-50%); border:0; background:transparent; color:#89949e; padding:6px; }
@@ -46,8 +46,9 @@
     .checkbox-label input { width:15px; height:15px; accent-color:var(--green); }
     .forgot-link, .auth-link { color:var(--green); font-weight:600; }
     .forgot-link:hover, .auth-link:hover { color:var(--green-dark); text-decoration:underline; }
-    .btn-primary { width:100%; min-height:46px; border:1px solid var(--green); border-radius:6px; background:var(--green); color:#fff; font-size:.92rem; font-weight:600; transition:background .2s,border-color .2s; }
-    .btn-primary:hover { background:var(--green-dark); border-color:var(--green-dark); }
+    .btn-primary, .btn-submit { width:100%; min-height:46px; border:1px solid var(--green); border-radius:6px; background:var(--green); color:#fff; font-size:.92rem; font-weight:600; transition:background .2s,border-color .2s; }
+    .btn-primary:hover, .btn-submit:hover:not(:disabled) { background:var(--green-dark); border-color:var(--green-dark); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; background: var(--muted); border-color: var(--muted); }
     .btn-primary:focus-visible, .toggle-password:focus-visible, .back-link:focus-visible { outline:3px solid rgba(22,132,91,.2); outline-offset:2px; }
     .auth-divider { display:flex; align-items:center; gap:12px; margin:24px 0 20px; color:#9aa3ab; font-size:.8rem; }
     .auth-divider::before, .auth-divider::after { content:""; height:1px; flex:1; background:var(--line); }
@@ -57,6 +58,19 @@
     .auth-footer a { text-decoration:underline; text-underline-offset:2px; }
     .btn-loader { display:inline-flex; }
     .spinner { width:16px; height:16px; display:inline-block; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
+    
+    /* Styles spécifiques pour le module d'Achat & Swap intégrés harmonieusement */
+    .buy-container { display: flex; justify-content: center; padding: 20px 0; }
+    .buy-box { width: min(100%, 500px); background: #fff; padding: 28px; }
+    .profit-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; }
+    .input-group { display: flex; align-items: stretch; border: 1px solid #cfd5db; border-radius: 6px; overflow: hidden; background: #fff; }
+    .input-group input { border: none !important; box-shadow: none !important; height: auto !important; flex: 1; }
+    .input-group select { border: none !important; outline: none !important; box-shadow: none !important; height: auto !important; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; }
+    .fee-breakdown div { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: var(--muted); }
+    .fee-breakdown div:not(:last-child) { border-bottom: 1px solid var(--line); }
+    .fee-breakdown span strong { color: var(--ink); }
+
     @keyframes spin { to { transform:rotate(360deg); } }
     @media (max-width:620px) {
       .container { width:min(100% - 28px,1100px); }
@@ -64,6 +78,7 @@
       .auth-card { margin-top:24px; }
       .auth-form { padding:22px 18px; }
       .form-options { align-items:flex-start; flex-direction:column; }
+      .form-row-2 { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
   </style>
