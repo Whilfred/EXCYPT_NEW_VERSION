@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion admin - ExCrypt</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg:#f5f7f6; --card:#ffffff; --border:#e2e6e3; --text:#14181a; --muted:#6c7680;
+            --accent:#5c9c14; --accent-ink:#ffffff; --red:#e0334f; --red-soft: rgba(224,51,79,.1);
+        }
+        html[data-theme="dark"] {
+            --bg:#0b0e11; --card:#151a15; --border:#232b23; --text:#eaecef; --muted:#848e9c;
+            --accent:#7ED321; --accent-ink:#0b0e11; --red:#f6465d; --red-soft: rgba(246,70,93,.12);
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', Arial, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; transition: background .2s, color .2s; }
+        .theme-toggle { position: fixed; top: 18px; right: 18px; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+        .card { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 34px 30px; }
+        .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+        .brand img { width: 32px; height: 32px; }
+        .brand span { font-weight: 800; font-size: 1.1rem; }
+        .brand small { display: block; color: var(--muted); font-weight: 500; font-size: .78rem; margin-top: 2px; }
+        h1 { font-size: 1.3rem; margin-bottom: 6px; }
+        p.sub { color: var(--muted); font-size: .88rem; margin-bottom: 26px; }
+        .field { margin-bottom: 16px; }
+        label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+        input { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: .92rem; }
+        input:focus { outline: none; border-color: var(--accent); }
+        .error { display: none; background: var(--red-soft); border: 1px solid var(--red); color: var(--red); font-size: .85rem; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; }
+        .error.show { display: block; }
+        button { width: 100%; padding: 13px; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 8px; font-weight: 700; font-size: .95rem; cursor: pointer; transition: opacity .2s; }
+        button:disabled { opacity: .6; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" title="Changer de thème">🌙</button>
+
+    <div class="card">
+        <div class="brand">
+            <img src="assets/images/logo-mark.png" alt="ExCrypt">
+            <div><span>ExCrypt</span><small>Administration</small></div>
+        </div>
+        <h1>Connexion</h1>
+        <p class="sub">Accès réservé à l'équipe ExCrypt.</p>
+
+        <div class="error" id="errorBox"></div>
+
+        <form id="loginForm">
+            <div class="field">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" required autocomplete="username">
+            </div>
+            <div class="field">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" id="submitBtn">Se connecter</button>
+        </form>
+    </div>
+
+    <script src="js/admin-api.js"></script>
+    <script>
+        if (isAdminAuthenticated()) location.href = 'dashboard.html';
+
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.textContent = getStoredTheme() === 'dark' ? '☀️' : '🌙';
+        themeToggle.addEventListener('click', () => {
+            const next = toggleTheme();
+            themeToggle.textContent = next === 'dark' ? '☀️' : '🌙';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorBox = document.getElementById('errorBox');
+            const btn = document.getElementById('submitBtn');
+            errorBox.classList.remove('show');
+            btn.disabled = true;
+            btn.textContent = 'Connexion...';
+
+            try {
+                const { token, admin } = await AdminAPI.login(
+                    document.getElementById('email').value.trim(),
+                    document.getElementById('password').value
+                );
+                setAdminSession(token, admin);
+                location.href = 'dashboard.html';
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.classList.add('show');
+                btn.disabled = false;
+                btn.textContent = 'Se connecter';
+            }
+        });
+    </script>
+</body>
+</html>

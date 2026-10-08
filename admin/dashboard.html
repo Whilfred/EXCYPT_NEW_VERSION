@@ -1,0 +1,844 @@
+<!-- admin-dashboard.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#16845b">
+    <title>Admin - ExCrypt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #fafafa; --card: #ffffff; --border: #eaecef;
+            --text: #1e2329; --muted: #707a8a; --accent: #0b0e11;
+            --green: #03a66d; --red: #cf304a; --input-bg: #fff;
+            --amber: #d4a017; --blue: #3b82f6;
+        }
+
+        [data-theme="dark"] {
+            --bg: #12161c; --card: #1e2329; --border: #2b313a;
+            --text: #eaecef; --muted: #848e9c; --accent: #fcd535;
+            --green: #0ecb81; --red: #f6465d; --input-bg: #12161c;
+            --amber: #f0b90b; --blue: #60a5fa;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; transition: background 0.2s, color 0.2s; }
+
+        .app { display: flex; min-height: 100vh; }
+
+        /* Sidebar Admin */
+        .sidebar { width: 260px; background: var(--card); border-right: 1px solid var(--border); padding: 24px 16px; position: fixed; height: 100vh; left: 0; top: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 100; }
+        .sidebar-top { display: flex; flex-direction: column; }
+        .sidebar-logo { font-size: 20px; font-weight: 700; margin-bottom: 32px; padding: 0 12px; display: flex; align-items: center; gap: 10px; color: var(--text); }
+        .sidebar-logo .badge-admin { font-size: 10px; background: var(--blue); color: white; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { padding: 11px 12px; border-radius: 8px; margin-bottom: 2px; cursor: pointer; transition: background .15s; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; font-weight: 500; }
+        .sidebar-menu li:hover { background: var(--bg); color: var(--text); }
+        .sidebar-menu li.active { background: var(--bg); color: var(--text); font-weight: 600; }
+        .sidebar-menu li .badge { margin-left: auto; background: var(--red); color: white; font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+        .sidebar-menu li .badge.green { background: var(--green); }
+        .sidebar-menu li.logout { color: var(--red); margin-top: 10px; border-top: 1px solid var(--border); padding-top: 20px; }
+        .sidebar-menu li.logout:hover { background: rgba(207, 48, 74, 0.1); }
+
+        .main { margin-left: 260px; padding: 28px 32px 40px; flex: 1; max-width: 1400px; width: 100%; }
+
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+        .topbar h1 { font-size: 22px; font-weight: 700; }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .topbar-actions .admin-info { font-size: 13px; color: var(--muted); }
+        .topbar-actions .admin-info strong { color: var(--text); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+        .stat-card .label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; }
+        .stat-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+        .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+        .filters select, .filters input { padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 13px; outline: none; }
+        .filters select:focus, .filters input:focus { border-color: var(--blue); }
+        .filters .filter-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+        .table-container { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .table-container .table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+        .table-container .table-header h3 { font-size: 16px; font-weight: 600; }
+        .table-container .table-header .count { font-size: 13px; color: var(--muted); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table th { text-align: left; padding: 12px 16px; background: var(--bg); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        table tr:hover td { background: var(--bg); }
+        table .empty-row td { text-align: center; padding: 40px; color: var(--muted); }
+
+        .badge-status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+        .badge-status.pending { color: var(--amber); background: rgba(212, 160, 23, 0.14); }
+        .badge-status.done { color: var(--green); background: rgba(3, 166, 109, 0.12); }
+        .badge-status.failed { color: var(--red); background: rgba(207, 48, 74, 0.12); }
+
+        .btn-action { padding: 5px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .btn-action:hover { opacity: 0.8; }
+        .btn-action.confirm { background: var(--green); color: white; }
+        .btn-action.cancel { background: var(--red); color: white; }
+        .btn-action.view { background: var(--blue); color: white; }
+        .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: var(--card); border-radius: 16px; padding: 32px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal .modal-header h2 { font-size: 20px; font-weight: 700; }
+        .modal .modal-close { background: none; border: none; font-size: 24px; color: var(--muted); cursor: pointer; }
+        .modal .modal-body { display: flex; flex-direction: column; gap: 12px; }
+        .modal .modal-body .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .modal .modal-body .detail-row .label { color: var(--muted); font-weight: 500; }
+        .modal .modal-body .detail-row .value { font-weight: 600; }
+        .modal .modal-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
+        .modal .modal-actions .btn { padding: 10px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .modal .modal-actions .btn:hover { opacity: 0.8; }
+        .modal .modal-actions .btn-primary { background: var(--green); color: white; }
+        .modal .modal-actions .btn-danger { background: var(--red); color: white; }
+        .modal .modal-actions .btn-secondary { background: var(--border); color: var(--text); }
+
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+        .toast.success { background: var(--green); color: white; }
+        .toast.error { background: var(--red); color: white; }
+
+        .refresh-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text); display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+        .refresh-btn:hover { background: var(--bg); }
+
+        .amount-positive { color: var(--green); }
+        .amount-negative { color: var(--red); }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 16px 12px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card .value { font-size: 20px; }
+            .table-container { overflow-x: auto; }
+            table { font-size: 12px; }
+            table th, table td { padding: 8px 10px; }
+            .modal { padding: 20px; margin: 10px; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .topbar h1 { font-size: 18px; }
+            .filters { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 5-3 5-3-5 3-5z"/><path d="M12 12l3 5-3 5-3-5 3-5z"/></svg>
+                ExCrypt
+                <span class="badge-admin">Admin</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active" onclick="switchTab('dashboard')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                    Tableau de bord
+                </li>
+                <li onclick="switchTab('transactions')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
+                    Transactions
+                    <span class="badge" id="pendingBadge">0</span>
+                </li>
+                <li onclick="switchTab('users')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
+                    Utilisateurs
+                </li>
+                <li onclick="switchTab('settings')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Paramètres
+                </li>
+            </ul>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="logout" onclick="handleLogout()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Déconnexion
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main" id="mainContent">
+        <div style="text-align:center; padding:60px 20px; color:var(--muted);">Chargement...</div>
+    </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle">Détail de la transaction</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-actions" id="modalActions"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ================================================================
+    // CONFIGURATION
+    // ================================================================
+
+    const API_BASE = window.location.origin + '/api';
+    
+    // Pour les tests, simuler l'API si elle n'est pas disponible
+    const USE_MOCK = false; // Mettre à true pour tester sans backend
+
+    // ================================================================
+    // FONCTIONS UTILITAIRES
+    // ================================================================
+
+    function fmtFCFA(n) { return Math.round(n).toLocaleString('fr-FR') + ' FCFA'; }
+    function fmtCrypto(n) { return Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 6 }); }
+    function fmtDate(ts) { return new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+
+    function getStatusBadge(status) {
+        const map = {
+            'en_attente': 'pending',
+            'termine': 'done',
+            'echoue': 'failed'
+        };
+        return map[status] || 'pending';
+    }
+
+    function getStatusLabel(status) {
+        const map = {
+            'en_attente': 'En attente',
+            'termine': 'Terminé',
+            'echoue': 'Échoué'
+        };
+        return map[status] || status;
+    }
+
+    function getTypeLabel(type) {
+        const map = {
+            'achat': 'Achat',
+            'vente': 'Vente',
+            'conversion': 'Conversion',
+            'depot': 'Dépôt',
+            'retrait': 'Retrait crypto',
+            'retrait_fcfa': 'Retrait Mobile Money'
+        };
+        return map[type] || type;
+    }
+
+    function showToast(msg, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast' + (type ? ' ' + type : '');
+        toast.classList.add('show');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ================================================================
+    // API (avec ou sans mock)
+    // ================================================================
+
+    async function apiRequest(endpoint, options = {}) {
+        if (USE_MOCK) {
+            return mockApiRequest(endpoint, options);
+        }
+
+        const url = API_BASE + endpoint;
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Erreur serveur' }));
+                throw new Error(error.error || 'Erreur serveur');
+            }
+
+            return await response.json();
+        } catch (err) {
+            console.error('API Error:', err);
+            throw err;
+        }
+    }
+
+    // ================================================================
+    // MOCK API (pour tests sans backend)
+    // ================================================================
+
+    let mockData = {
+        transactions: [
+            { id: 1, type: 'achat', status: 'en_attente', crypto: 'USDT', crypto_amount: 16.0676, fcfa_amount: 10000, fee_amount: 400, network: 'Orange Money BF', phone: '+22662656423', country: 'Burkina Faso', crypto_network: 'TRC20 (Tron)', address: 'TQn9Y2khD5f8...', created_at: new Date().toISOString(), user: { first_name: 'Jean', last_name: 'Dupont', email: 'jean@example.com' } },
+            { id: 2, type: 'vente', status: 'termine', crypto: 'USDT', crypto_amount: 10, fcfa_amount: 5811, fee_amount: 119, network: 'Orange Money BF', phone: '+22662656423', country: 'Burkina Faso', created_at: new Date(Date.now() - 3600000).toISOString(), user: { first_name: 'Marie', last_name: 'Diop', email: 'marie@example.com' } },
+            { id: 3, type: 'depot', status: 'en_attente', crypto: 'USDT', crypto_amount: 50, network: 'TRC20 (Tron)', tx_id: '0xabc123...', created_at: new Date(Date.now() - 7200000).toISOString(), user: { first_name: 'Ali', last_name: 'Traoré', email: 'ali@example.com' } },
+            { id: 4, type: 'retrait_fcfa', status: 'en_attente', fcfa_amount: 25000, fee_amount: 375, network: 'Orange Money BF', phone: '+22662656423', country: 'Burkina Faso', created_at: new Date(Date.now() - 10800000).toISOString(), user: { first_name: 'Fatou', last_name: 'Ndiaye', email: 'fatou@example.com' } }
+        ],
+        stats: { pending: 3, done: 1, failed: 0, total: 4 },
+        users: [
+            { id: 1, first_name: 'Jean', last_name: 'Dupont', email: 'jean@example.com', phone: '+22662656423', country: 'Burkina Faso', kyc_status: 'verifie', created_at: new Date().toISOString() },
+            { id: 2, first_name: 'Marie', last_name: 'Diop', email: 'marie@example.com', phone: '+22662656423', country: 'Sénégal', kyc_status: 'en_attente', created_at: new Date().toISOString() }
+        ]
+    };
+
+    async function mockApiRequest(endpoint, options = {}) {
+        console.log('📥 [Mock]', endpoint, options);
+
+        // Transactions
+        if (endpoint === '/admin/transactions' || endpoint === '/transactions/list') {
+            const filter = options.body?.filter || 'tous';
+            let txs = mockData.transactions;
+            if (filter !== 'tous') {
+                txs = txs.filter(t => t.type === filter || t.status === filter);
+            }
+            return { transactions: txs };
+        }
+
+        if (endpoint.includes('/admin/transactions/') && options.method === 'PATCH') {
+            const id = parseInt(endpoint.split('/').pop());
+            const tx = mockData.transactions.find(t => t.id === id);
+            if (tx) {
+                tx.status = options.body.status;
+                showToast(`Transaction ${id} ${options.body.status === 'termine' ? 'confirmée' : 'annulée'}`, 'success');
+                return { transaction: tx };
+            }
+        }
+
+        // Stats
+        if (endpoint === '/admin/stats') {
+            const pending = mockData.transactions.filter(t => t.status === 'en_attente').length;
+            const done = mockData.transactions.filter(t => t.status === 'termine').length;
+            const failed = mockData.transactions.filter(t => t.status === 'echoue').length;
+            return { stats: { pending, done, failed, total: mockData.transactions.length } };
+        }
+
+        // Users
+        if (endpoint === '/admin/users') {
+            return { users: mockData.users };
+        }
+
+        // Settings
+        if (endpoint === '/admin/settings') {
+            return { settings: { theme: 'dark', language: 'fr', notifications: { email: true, sms: true, push: false } } };
+        }
+
+        // Me
+        if (endpoint === '/auth/me') {
+            return { user: { first_name: 'Admin', last_name: 'System', email: 'admin@excypt.com', role: 'admin' } };
+        }
+
+        return { success: true };
+    }
+
+    // ================================================================
+    // NAVIGATION
+    // ================================================================
+
+    let __currentTab = 'dashboard';
+
+    async function switchTab(tabName) {
+        document.querySelectorAll('.sidebar-menu li').forEach(el => el.classList.remove('active'));
+        const mainContent = document.getElementById('mainContent');
+
+        try {
+            if (tabName === 'dashboard') {
+                document.querySelector('.sidebar-menu li:nth-child(1)')?.classList.add('active');
+                await renderDashboard();
+            } else if (tabName === 'transactions') {
+                document.querySelector('.sidebar-menu li:nth-child(2)')?.classList.add('active');
+                await renderTransactions();
+            } else if (tabName === 'users') {
+                document.querySelector('.sidebar-menu li:nth-child(3)')?.classList.add('active');
+                await renderUsers();
+            } else if (tabName === 'settings') {
+                document.querySelector('.sidebar-menu li:nth-child(4)')?.classList.add('active');
+                await renderSettings();
+            }
+            __currentTab = tabName;
+        } catch (err) {
+            console.error(err);
+            mainContent.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--red);">
+                    <p>${err.message || 'Erreur de chargement'}</p>
+                    <button class="btn-action view" onclick="switchTab('${tabName}')" style="margin-top:12px;">Réessayer</button>
+                </div>
+            `;
+        }
+    }
+
+    function handleLogout() {
+        if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    }
+
+    // ================================================================
+    // TABLEAU DE BORD ADMIN
+    // ================================================================
+
+    async function renderDashboard() {
+        const mainContent = document.getElementById('mainContent');
+
+        try {
+            const [statsRes, txsRes, meRes] = await Promise.all([
+                apiRequest('/admin/stats'),
+                apiRequest('/admin/transactions'),
+                apiRequest('/auth/me')
+            ]);
+
+            const stats = statsRes.stats || { pending: 0, done: 0, failed: 0, total: 0 };
+            const transactions = txsRes.transactions || [];
+            const user = meRes.user || { first_name: 'Admin' };
+            const pendingTxs = transactions.filter(t => t.status === 'en_attente').slice(0, 5);
+
+            // Mettre à jour le badge
+            document.getElementById('pendingBadge').textContent = stats.pending || 0;
+
+            mainContent.innerHTML = `
+                <div class="topbar">
+                    <h1>👋 Bonjour ${user.first_name || 'Admin'}</h1>
+                    <div class="topbar-actions">
+                        <span class="admin-info">Connecté en tant que <strong>Administrateur</strong></span>
+                        <button class="refresh-btn" onclick="switchTab('dashboard')">⟳ Actualiser</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Total transactions</div>
+                        <div class="value">${stats.total || 0}</div>
+                        <div class="sub">Toutes les transactions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">En attente</div>
+                        <div class="value" style="color:var(--amber);">${stats.pending || 0}</div>
+                        <div class="sub">À valider</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Confirmées</div>
+                        <div class="value" style="color:var(--green);">${stats.done || 0}</div>
+                        <div class="sub">Transactions terminées</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Échouées</div>
+                        <div class="value" style="color:var(--red);">${stats.failed || 0}</div>
+                        <div class="sub">Transactions annulées</div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>📋 Dernières transactions en attente</h3>
+                        <span class="count">${pendingTxs.length} transaction(s)</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Montant</th>
+                                <th>Client</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingTxs.length === 0 ? `
+                                <tr class="empty-row"><td colspan="7">✅ Aucune transaction en attente</td></tr>
+                            ` : pendingTxs.map(tx => `
+                                <tr>
+                                    <td>#${tx.id}</td>
+                                    <td><strong>${getTypeLabel(tx.type)}</strong> ${tx.crypto ? tx.crypto : ''}</td>
+                                    <td>${tx.crypto_amount ? fmtCrypto(tx.crypto_amount) + ' ' + tx.crypto : fmtFCFA(tx.fcfa_amount || 0)}</td>
+                                    <td>${tx.user ? tx.user.first_name + ' ' + tx.user.last_name : 'N/A'}</td>
+                                    <td>${fmtDate(tx.created_at)}</td>
+                                    <td><span class="badge-status ${getStatusBadge(tx.status)}">${getStatusLabel(tx.status)}</span></td>
+                                    <td>
+                                        <button class="btn-action view" onclick="viewTransaction(${tx.id})">Voir</button>
+                                        <button class="btn-action confirm" onclick="confirmTransaction(${tx.id})">✓</button>
+                                        <button class="btn-action cancel" onclick="cancelTransaction(${tx.id})">✗</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${pendingTxs.length > 0 ? `
+                        <div style="padding:12px 20px; border-top:1px solid var(--border); text-align:center;">
+                            <button class="btn-action view" onclick="switchTab('transactions')">Voir toutes les transactions →</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } catch (err) {
+            console.error(err);
+            mainContent.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--red);">
+                    <p>${err.message || 'Erreur de chargement du tableau de bord'}</p>
+                    <button class="btn-action view" onclick="switchTab('dashboard')" style="margin-top:12px;">Réessayer</button>
+                </div>
+            `;
+        }
+    }
+
+    // ================================================================
+    // LISTE DES TRANSACTIONS
+    // ================================================================
+
+    let currentFilter = 'tous';
+
+    async function renderTransactions(filter) {
+        const mainContent = document.getElementById('mainContent');
+        if (filter) currentFilter = filter;
+
+        try {
+            const res = await apiRequest('/admin/transactions', {
+                method: 'POST',
+                body: JSON.stringify({ filter: currentFilter })
+            });
+
+            const transactions = res.transactions || [];
+
+            // Mettre à jour le badge
+            const pending = transactions.filter(t => t.status === 'en_attente').length;
+            document.getElementById('pendingBadge').textContent = pending;
+
+            const filters = [
+                { key: 'tous', label: 'Tous' },
+                { key: 'en_attente', label: 'En attente' },
+                { key: 'termine', label: 'Confirmées' },
+                { key: 'echoue', label: 'Échouées' },
+                { key: 'achat', label: 'Achats' },
+                { key: 'vente', label: 'Ventes' },
+                { key: 'conversion', label: 'Conversions' },
+                { key: 'depot', label: 'Dépôts' },
+                { key: 'retrait', label: 'Retraits crypto' },
+                { key: 'retrait_fcfa', label: 'Retraits Mobile Money' }
+            ];
+
+            mainContent.innerHTML = `
+                <div class="topbar">
+                    <h1>📋 Transactions</h1>
+                    <button class="refresh-btn" onclick="renderTransactions('${currentFilter}')">⟳ Actualiser</button>
+                </div>
+
+                <div class="filters">
+                    <span class="filter-label">Filtrer :</span>
+                    ${filters.map(f => `
+                        <button class="btn-action ${f.key === currentFilter ? 'view' : ''}" 
+                                style="${f.key === currentFilter ? '' : 'background:var(--border);color:var(--text);'}"
+                                onclick="renderTransactions('${f.key}')">
+                            ${f.label}
+                        </button>
+                    `).join('')}
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>${transactions.length} transaction(s)</h3>
+                        <span class="count">${transactions.filter(t => t.status === 'en_attente').length} en attente</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Montant</th>
+                                <th>Client</th>
+                                <th>Réseau</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${transactions.length === 0 ? `
+                                <tr class="empty-row"><td colspan="8">Aucune transaction trouvée</td></tr>
+                            ` : transactions.map(tx => `
+                                <tr>
+                                    <td>#${tx.id}</td>
+                                    <td><strong>${getTypeLabel(tx.type)}</strong> ${tx.crypto ? tx.crypto : ''}</td>
+                                    <td>${tx.crypto_amount ? fmtCrypto(tx.crypto_amount) + ' ' + tx.crypto : fmtFCFA(tx.fcfa_amount || 0)}</td>
+                                    <td>${tx.user ? tx.user.first_name + ' ' + tx.user.last_name : 'N/A'}</td>
+                                    <td>${tx.network || '-'}</td>
+                                    <td>${fmtDate(tx.created_at)}</td>
+                                    <td><span class="badge-status ${getStatusBadge(tx.status)}">${getStatusLabel(tx.status)}</span></td>
+                                    <td>
+                                        <button class="btn-action view" onclick="viewTransaction(${tx.id})">Voir</button>
+                                        ${tx.status === 'en_attente' ? `
+                                            <button class="btn-action confirm" onclick="confirmTransaction(${tx.id})">✓</button>
+                                            <button class="btn-action cancel" onclick="cancelTransaction(${tx.id})">✗</button>
+                                        ` : ''}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } catch (err) {
+            console.error(err);
+            mainContent.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--red);">
+                    <p>${err.message || 'Erreur de chargement des transactions'}</p>
+                    <button class="btn-action view" onclick="renderTransactions('${currentFilter}')" style="margin-top:12px;">Réessayer</button>
+                </div>
+            `;
+        }
+    }
+
+    // ================================================================
+    // ACTIONS SUR LES TRANSACTIONS
+    // ================================================================
+
+    async function viewTransaction(id) {
+        try {
+            const res = await apiRequest('/admin/transactions/' + id);
+            const tx = res.transaction;
+
+            const modal = document.getElementById('modalOverlay');
+            const body = document.getElementById('modalBody');
+            const actions = document.getElementById('modalActions');
+            const title = document.getElementById('modalTitle');
+
+            title.textContent = `Transaction #${tx.id}`;
+
+            body.innerHTML = `
+                <div class="detail-row"><span class="label">Type</span><span class="value">${getTypeLabel(tx.type)}</span></div>
+                ${tx.crypto ? `<div class="detail-row"><span class="label">Crypto</span><span class="value">${tx.crypto}</span></div>` : ''}
+                ${tx.crypto_amount ? `<div class="detail-row"><span class="label">Montant crypto</span><span class="value">${fmtCrypto(tx.crypto_amount)} ${tx.crypto}</span></div>` : ''}
+                ${tx.fcfa_amount ? `<div class="detail-row"><span class="label">Montant FCFA</span><span class="value">${fmtFCFA(tx.fcfa_amount)}</span></div>` : ''}
+                ${tx.fee_amount ? `<div class="detail-row"><span class="label">Frais</span><span class="value">${fmtFCFA(tx.fee_amount)}</span></div>` : ''}
+                <div class="detail-row"><span class="label">Statut</span><span class="value"><span class="badge-status ${getStatusBadge(tx.status)}">${getStatusLabel(tx.status)}</span></span></div>
+                ${tx.network ? `<div class="detail-row"><span class="label">Réseau</span><span class="value">${tx.network}</span></div>` : ''}
+                ${tx.phone ? `<div class="detail-row"><span class="label">Téléphone</span><span class="value">${tx.phone}</span></div>` : ''}
+                ${tx.country ? `<div class="detail-row"><span class="label">Pays</span><span class="value">${tx.country}</span></div>` : ''}
+                ${tx.crypto_network ? `<div class="detail-row"><span class="label">Réseau blockchain</span><span class="value">${tx.crypto_network}</span></div>` : ''}
+                ${tx.address ? `<div class="detail-row"><span class="label">Adresse</span><span class="value" style="font-size:12px;word-break:break-all;">${tx.address}</span></div>` : ''}
+                ${tx.tx_id ? `<div class="detail-row"><span class="label">TxID</span><span class="value" style="font-size:12px;word-break:break-all;">${tx.tx_id}</span></div>` : ''}
+                <div class="detail-row"><span class="label">Créé le</span><span class="value">${fmtDate(tx.created_at)}</span></div>
+                ${tx.user ? `
+                    <div class="detail-row"><span class="label">Client</span><span class="value">${tx.user.first_name} ${tx.user.last_name}</span></div>
+                    <div class="detail-row"><span class="label">Email</span><span class="value">${tx.user.email}</span></div>
+                ` : ''}
+            `;
+
+            actions.innerHTML = `
+                ${tx.status === 'en_attente' ? `
+                    <button class="btn btn-primary" onclick="confirmTransaction(${tx.id}); closeModal();">✓ Confirmer</button>
+                    <button class="btn btn-danger" onclick="cancelTransaction(${tx.id}); closeModal();">✗ Annuler</button>
+                ` : ''}
+                <button class="btn btn-secondary" onclick="closeModal()">Fermer</button>
+            `;
+
+            modal.classList.add('show');
+        } catch (err) {
+            showToast(err.message || 'Erreur', 'error');
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+    }
+
+    // Fermer le modal en cliquant à l'extérieur
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    async function confirmTransaction(id) {
+        if (!confirm('Confirmer cette transaction ?')) return;
+
+        try {
+            await apiRequest('/admin/transactions/' + id, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'termine' })
+            });
+            showToast('✅ Transaction confirmée avec succès', 'success');
+            switchTab(__currentTab);
+        } catch (err) {
+            showToast(err.message || 'Erreur', 'error');
+        }
+    }
+
+    async function cancelTransaction(id) {
+        if (!confirm('Annuler cette transaction ?')) return;
+
+        try {
+            await apiRequest('/admin/transactions/' + id, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'echoue' })
+            });
+            showToast('❌ Transaction annulée', 'success');
+            switchTab(__currentTab);
+        } catch (err) {
+            showToast(err.message || 'Erreur', 'error');
+        }
+    }
+
+    // ================================================================
+    // UTILISATEURS
+    // ================================================================
+
+    async function renderUsers() {
+        const mainContent = document.getElementById('mainContent');
+
+        try {
+            const res = await apiRequest('/admin/users');
+            const users = res.users || [];
+
+            mainContent.innerHTML = `
+                <div class="topbar">
+                    <h1>👤 Utilisateurs</h1>
+                    <button class="refresh-btn" onclick="renderUsers()">⟳ Actualiser</button>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>${users.length} utilisateur(s)</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Pays</th>
+                                <th>KYC</th>
+                                <th>Inscription</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.length === 0 ? `
+                                <tr class="empty-row"><td colspan="7">Aucun utilisateur</td></tr>
+                            ` : users.map(u => `
+                                <tr>
+                                    <td>#${u.id}</td>
+                                    <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong></td>
+                                    <td>${u.email || '-'}</td>
+                                    <td>${u.phone || '-'}</td>
+                                    <td>${u.country || '-'}</td>
+                                    <td><span class="badge-status ${u.kyc_status === 'verifie' ? 'done' : u.kyc_status === 'en_attente' ? 'pending' : 'failed'}">${u.kyc_status || 'non_verifie'}</span></td>
+                                    <td>${fmtDate(u.created_at)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } catch (err) {
+            mainContent.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--red);">
+                    <p>${err.message || 'Erreur de chargement des utilisateurs'}</p>
+                    <button class="btn-action view" onclick="renderUsers()" style="margin-top:12px;">Réessayer</button>
+                </div>
+            `;
+        }
+    }
+
+    // ================================================================
+    // PARAMÈTRES ADMIN
+    // ================================================================
+
+    async function renderSettings() {
+        const mainContent = document.getElementById('mainContent');
+
+        try {
+            const res = await apiRequest('/admin/settings');
+            const settings = res.settings || {};
+
+            mainContent.innerHTML = `
+                <div class="topbar">
+                    <h1>⚙️ Paramètres</h1>
+                </div>
+
+                <div style="display:grid; gap:20px; max-width:700px;">
+                    <div class="table-container" style="padding:24px;">
+                        <h3 style="margin-bottom:16px;">Taux de change</h3>
+                        <div class="detail-row" style="padding:8px 0;"><span class="label">USDT (Achat)</span><span class="value">592 FCFA</span></div>
+                        <div class="detail-row" style="padding:8px 0;"><span class="label">USDT (Vente)</span><span class="value">593 FCFA</span></div>
+                        <div class="detail-row" style="padding:8px 0;"><span class="label">Frais service Achat</span><span class="value">4%</span></div>
+                        <div class="detail-row" style="padding:8px 0;"><span class="label">Frais service Vente</span><span class="value">2%</span></div>
+                        <div class="detail-row" style="padding:8px 0;"><span class="label">Frais réseau</span><span class="value">1.5 USDT</span></div>
+                    </div>
+
+                    <div class="table-container" style="padding:24px;">
+                        <h3 style="margin-bottom:16px;">Thème</h3>
+                        <div style="display:flex; gap:12px;">
+                            <button class="btn-action view" onclick="setTheme('light')">☀️ Clair</button>
+                            <button class="btn-action view" onclick="setTheme('dark')">🌙 Sombre</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container" style="padding:24px;">
+                        <h3 style="margin-bottom:16px;">Session</h3>
+                        <button class="btn-action cancel" onclick="handleLogout()">Se déconnecter</button>
+                    </div>
+                </div>
+            `;
+        } catch (err) {
+            mainContent.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--red);">
+                    <p>${err.message || 'Erreur de chargement des paramètres'}</p>
+                    <button class="btn-action view" onclick="renderSettings()" style="margin-top:12px;">Réessayer</button>
+                </div>
+            `;
+        }
+    }
+
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        }
+        showToast('Thème changé', 'success');
+    }
+
+    // ================================================================
+    // INITIALISATION
+    // ================================================================
+
+    (function applyCachedTheme() {
+        const cached = localStorage.getItem('theme');
+        if (cached === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else if (cached === 'light') document.documentElement.removeAttribute('data-theme');
+    })();
+
+    // Démarrer sur le tableau de bord
+    switchTab('dashboard');
+
+    // Rafraîchir automatiquement toutes les 30 secondes
+    setInterval(() => {
+        if (__currentTab === 'dashboard') renderDashboard();
+        else if (__currentTab === 'transactions') renderTransactions(currentFilter);
+    }, 30000);
+</script>
+</body>
+</html>
