@@ -7,12 +7,15 @@ const pool = new Pool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    keepAlive: true
 });
 
 pool.on('error', (err) => {
-    console.error('Erreur inattendue du pool PostgreSQL', err);
-    process.exit(-1);
+    console.error('⚠️ Erreur sur une connexion inactive du pool PG:', err.message);
 });
 
 async function query(text, params) {
